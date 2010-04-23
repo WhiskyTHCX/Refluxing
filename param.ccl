@@ -1,0 +1,16 @@
+# Parameter definitions for thorn Refluxing
+
+SHARES: MethodOfLines
+
+USES CCTK_INT MoL_Num_Evolved_Vars
+
+PRIVATE:
+
+CCTK_INT Refluxing_MaxNumEvolvedVars "The maximum number of evolved variables used by Refluxing" ACCUMULATOR-BASE=MethodofLines::MoL_Num_Evolved_Vars
+{
+  30:30 :: "refluxing adds 30 (2 * NDIRS * NSTATEVARS) evolved variables"
+} 30
+
+BOOLEAN refluxing_debug_variables "Enable storage for refluxing debug variables"
+{
+} "no"

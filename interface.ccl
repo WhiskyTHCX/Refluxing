@@ -1,0 +1,93 @@
+# Interface definition for thorn Refluxing
+
+IMPLEMENTS: Refluxing
+
+INHERITS: Whisky
+
+USES INCLUDE HEADER: loopcontrol.h
+
+USES INCLUDE HEADER: dh.hh
+USES INCLUDE HEADER: gh.hh
+USES INCLUDE HEADER: operator_prototypes_3d.hh
+USES INCLUDE HEADER: vect.hh
+
+USES INCLUDE HEADER: carpet.hh
+
+
+
+# Get pointer to grid variable for a specific map and refinement level
+CCTK_POINTER FUNCTION                     \
+    VarDataPtrI                           \
+        (CCTK_POINTER_TO_CONST IN cctkGH, \
+         CCTK_INT IN map,                 \
+         CCTK_INT IN reflevel,            \
+         CCTK_INT IN component,           \
+         CCTK_INT IN timelevel,           \
+         CCTK_INT IN varindex)
+REQUIRES FUNCTION VarDataPtrI
+
+
+
+# Flux weight functions (shows where refluxing happens; for debugging only)
+CCTK_REAL flux_weight_fine[3] TYPE=gf TAGS='Prolongation="none" tensortypealias="D" tensorweight=+1.0' "Fine grid refluxing weight"
+CCTK_REAL flux_weight_coarse[3] TYPE=gf TAGS='Prolongation="none" tensortypealias="D" tensorweight=+1.0' "Coarse grid refluxing weight"
+
+
+
+# Flux registers, where the fluxes are integrated in time
+#    There are separate registers for each direction
+#    There are separeate registers for coarse and fine grids,
+#       and their differences determines the correction
+# Stored fluxes, just capturing what GRHydro calculates
+#    These are used as RHS for the flux registers
+# Correction terms
+#    These are temporary variables, only used
+#       to calculate the difference between the coarse and fine grid registers
+# Time-summed corrections, just for debugging
+# All these variables exist for all conserved quantites
+
+# There are:
+#   5 conserved quantities
+#   3 directions
+#   fluxes, coarse and fine registers with 2 time levles each
+#      makes altogether 5 * 3 * (1 + 2 + 2) = 75 additional time levels
+#   refluxing is expensive memory-wise;
+#      this could be optimised since these need only be stored
+#      on the refinement boundaries, not in the whole volume
+
+# Density
+CCTK_REAL densflux_register_fine[3] TYPE=gf TIMELEVELS=2 TAGS='Prolongation="none" tensortypealias="D" tensorweight=+1.0' "Register for fine grid density flux"
+CCTK_REAL densflux_register_coarse[3] TYPE=gf TIMELEVELS=2 TAGS='Prolongation="none" tensortypealias="D" tensorweight=+1.0' "Register for coarse grid density flux"
+CCTK_REAL densflux_stored[3] TYPE=gf TAGS='Prolongation="none" tensortypealias="D" tensorweight=+1.0' "Density flux"
+CCTK_REAL densflux_correction[3] TYPE=gf TAGS='Prolongation="none" tensortypealias="D" tensorweight=+1.0' "Correction for density flux"
+
+# Momenta
+CCTK_REAL sconflux_register_fine[3] TYPE=gf TIMELEVELS=2 TAGS='Prolongation="none" tensortypealias="DD" tensorweight=+1.0'
+{
+  sxflux_register_fine syflux_register_fine szflux_register_fine
+} "Register for fine grid momentum flux"
+CCTK_REAL sconflux_register_coarse[3] TYPE=gf TIMELEVELS=2 TAGS='Prolongation="none" tensortypealias="DD" tensorweight=+1.0'
+{
+  sxflux_register_coarse syflux_register_coarse szflux_register_coarse
+} "Register for coarse grid momentum flux"
+CCTK_REAL sconflux_stored[3] TYPE=gf TAGS='Prolongation="none" tensortypealias="DD" tensorweight=+1.0'
+{
+  sxflux_stored syflux_stored szflux_stored
+} "Momentum flux"
+CCTK_REAL sconflux_correction[3] TYPE=gf TAGS='Prolongation="none" tensortypealias="DD" tensorweight=+1.0'
+{
+  sxflux_correction syflux_correction szflux_correction
+} "Correction for momentum flux"
+
+# Energy
+CCTK_REAL tauflux_register_fine[3] TYPE=gf TIMELEVELS=2 TAGS='Prolongation="none" tensortypealias="D" tensorweight=+1.0' "Register for fine grid energy flux"
+CCTK_REAL tauflux_register_coarse[3] TYPE=gf TIMELEVELS=2 TAGS='Prolongation="none" tensortypealias="D" tensorweight=+1.0' "Register for coarse grid energy flux"
+CCTK_REAL tauflux_stored[3] TYPE=gf TAGS='Prolongation="none" tensortypealias="D" tensorweight=+1.0' "Energy flux"
+CCTK_REAL tauflux_correction[3] TYPE=gf TAGS='Prolongation="none" tensortypealias="D" tensorweight=+1.0' "Correction for energy flux"
+
+CCTK_REAL dens_correction_total[3] TYPE=gf TAGS='Prolongation="none" tensortypealias="D" tensorweight=+1.0' "Accumulated correction for density flux"
+CCTK_REAL scon_correction_total[3] TYPE=gf TAGS='Prolongation="none" tensortypealias="D" tensorweight=+1.0'
+{
+  sx_correction_total sy_correction_total sz_correction_total
+} "Accumulated correction for momentum flux"
+CCTK_REAL tau_correction_total[3] TYPE=gf TAGS='Prolongation="none" tensortypealias="D" tensorweight=+1.0' "Accumulated correction for energy flux"

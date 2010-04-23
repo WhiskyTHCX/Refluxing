@@ -1,0 +1,7 @@
+# Main make.code.defn file for thorn Refluxing
+
+# Source files in this directory
+SRCS = capture.F90 correct.cc init.F90
+
+# Subdirectories containing source files
+SUBDIRS = 

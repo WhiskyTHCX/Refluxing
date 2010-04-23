@@ -1,0 +1,50 @@
+# Schedule definitions for thorn Refluxing
+
+if (refluxing_debug_variables) {
+  STORAGE: flux_weight_fine
+  STORAGE: flux_weight_coarse
+}
+
+STORAGE: densflux_register_fine[2]
+STORAGE: densflux_register_coarse[2]
+STORAGE: densflux_stored
+STORAGE: sconflux_register_fine[2]
+STORAGE: sconflux_register_coarse[2]
+STORAGE: sconflux_stored
+STORAGE: tauflux_register_fine[2]
+STORAGE: tauflux_register_coarse[2]
+STORAGE: tauflux_stored
+
+if (refluxing_debug_variables) {
+  STORAGE: densflux_correction
+  STORAGE: sconflux_correction
+  STORAGE: tauflux_correction
+  STORAGE: dens_correction_total
+  STORAGE: scon_correction_total
+  STORAGE: tau_correction_total
+}
+
+
+
+SCHEDULE Refluxing_Init AT INITIAL
+{
+  LANG: Fortran
+} "Initialise refluxing variables"
+
+# This is scheduled inside GRHydro's RHS calculation
+SCHEDULE Refluxing_CaptureFluxes IN FluxTerms AFTER Riemann
+{
+  LANG: Fortran
+} "Capture and store the flux terms"
+
+# Schedule refluxing before MoL_PostStep, because MoL_PostStep calls
+# con2prim, which has to happen after refluxing
+# TODO: Schedule all boundary conditions etc. after this routine
+SCHEDULE Refluxing_CorrectState AT postrestrict BEFORE MoL_PostStep
+{
+  LANG: C
+  OPTIONS: singlemap
+  STORAGE: densflux_correction
+  STORAGE: sconflux_correction
+  STORAGE: tauflux_correction
+} "Correct coarse grid state"
