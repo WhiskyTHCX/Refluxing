@@ -26,7 +26,12 @@ if (refluxing_debug_variables) {
 
 
 
-SCHEDULE Refluxing_Init AT INITIAL
+SCHEDULE Refluxing_Register IN MoL_Register
+{
+  LANG: C
+} "Register evolved variables"
+
+SCHEDULE Refluxing_Init AT initial
 {
   LANG: Fortran
 } "Initialise refluxing variables"

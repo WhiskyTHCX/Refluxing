@@ -427,7 +427,7 @@ void Refluxing_CorrectState (CCTK_ARGUMENTS)
     flux_register_coarse_ptrs[1] = get_varptr (cctkGH, reflevel, "refluxing::sxflux_register_coarse[0]");
     flux_register_coarse_ptrs[2] = get_varptr (cctkGH, reflevel, "refluxing::syflux_register_coarse[0]");
     flux_register_coarse_ptrs[3] = get_varptr (cctkGH, reflevel, "refluxing::szflux_register_coarse[0]");
-    flux_register_coarse_ptrs[4] = get_varptr (cctkGH, reflevel, "refluxing::rktauflux_register_coarse[0]");
+    flux_register_coarse_ptrs[4] = get_varptr (cctkGH, reflevel, "refluxing::tauflux_register_coarse[0]");
 
     for (int n=0; n<nvars; ++n) {
       assert (dim == 3);
