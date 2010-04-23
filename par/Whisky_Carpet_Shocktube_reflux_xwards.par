@@ -124,7 +124,7 @@ TimerReport::n_top_timers               = 20
 Carpet::init_fill_timelevels                 = yes
 
 whisky_init_data::shocktube_type	=	"xshock"
-whisky_init_data::shock_xpos		=	0.48e0
+whisky_init_data::shock_xpos		=	0.0
 whisky_init_data::shock_case		=	"sod"
 whisky_init_data::change_shock_direction =	no
 
@@ -150,15 +150,15 @@ cartgrid3d::type                             = "coordbase"
 cartgrid3d::domain                           = "full"
 cartgrid3d::avoid_origin		     = no
 
-coordbase::xmin				     =  0.0
-coordbase::xmax				     =  1.0
-coordbase::ymin				     = -0.00125
-coordbase::ymax				     = +0.00125
-coordbase::zmin				     = -0.00125
-coordbase::zmax				     = +0.00125
-coordbase::dx				     =  0.0025
-coordbase::dy				     =  0.0025
-coordbase::dz				     =  0.0025
+coordbase::xmin				     = -1.0
+coordbase::xmax				     = +1.0
+coordbase::ymin				     = -0.0125
+coordbase::ymax				     = +0.0125
+coordbase::zmin				     = -0.0125
+coordbase::zmax				     = +0.0125
+coordbase::dx				     =  0.025
+coordbase::dy				     =  0.025
+coordbase::dz				     =  0.025
 					     
 CoordBase::boundary_staggered_x_lower        = yes
 CoordBase::boundary_staggered_y_lower        = yes
@@ -185,8 +185,8 @@ CarpetRegrid2::verbose      		     = yes
 
 CarpetRegrid2::num_centres 		     = 1
 CarpetRegrid2::num_levels_1 		     = 2
-CarpetRegrid2::position_x_1 		     = 0.4
-CarpetRegrid2::radius_1[1]  		     = 0.1
+CarpetRegrid2::position_x_1 		     = 0.0
+CarpetRegrid2::radius_1[1]  		     = 0.2
 
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 # Hydro

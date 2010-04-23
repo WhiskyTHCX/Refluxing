@@ -91,15 +91,75 @@ IOASCII::out1D_vars             =       "grid::coordinates
                                          refluxing::tauflux_correction
                                          refluxing::tau_correction_total"
 
+IOASCII::out2D_vars             =       "grid::coordinates
+                                         carpetreduce::weight
+                                         hydrobase::rho 
+                                         hydrobase::vel 
+                                         hydrobase::eps 
+                                         hydrobase::press 
+                                         whisky::dens 
+                                         whisky::scon
+                                         whisky::tau
+                                         whisky::densrhs
+                                         whisky::srhs
+                                         whisky::taurhs
+                                         refluxing::flux_weight_fine
+                                         refluxing::flux_weight_coarse
+                                         refluxing::densflux_register_fine
+                                         refluxing::densflux_register_coarse
+                                         refluxing::densflux_stored
+                                         refluxing::densflux_correction
+                                         refluxing::dens_correction_total
+                                         refluxing::sconflux_register_fine
+                                         refluxing::sconflux_register_coarse
+                                         refluxing::sconflux_stored
+                                         refluxing::sconflux_correction
+                                         refluxing::scon_correction_total
+                                         refluxing::tauflux_register_fine
+                                         refluxing::tauflux_register_coarse
+                                         refluxing::tauflux_stored
+                                         refluxing::tauflux_correction
+                                         refluxing::tau_correction_total"
+
+IOASCII::out3D_vars             =       "grid::coordinates
+                                         carpetreduce::weight
+                                         hydrobase::rho 
+                                         hydrobase::vel 
+                                         hydrobase::eps 
+                                         hydrobase::press 
+                                         whisky::dens 
+                                         whisky::scon
+                                         whisky::tau
+                                         whisky::densrhs
+                                         whisky::srhs
+                                         whisky::taurhs
+                                         refluxing::flux_weight_fine
+                                         refluxing::flux_weight_coarse
+                                         refluxing::densflux_register_fine
+                                         refluxing::densflux_register_coarse
+                                         refluxing::densflux_stored
+                                         refluxing::densflux_correction
+                                         refluxing::dens_correction_total
+                                         refluxing::sconflux_register_fine
+                                         refluxing::sconflux_register_coarse
+                                         refluxing::sconflux_stored
+                                         refluxing::sconflux_correction
+                                         refluxing::scon_correction_total
+                                         refluxing::tauflux_register_fine
+                                         refluxing::tauflux_register_coarse
+                                         refluxing::tauflux_stored
+                                         refluxing::tauflux_correction
+                                         refluxing::tau_correction_total"
+
 IO::out_dir                                  = $parfile
 io::recover 				     = no
 carpet::enable_all_storage 		     = no
 
 carpetioscalar::outScalar_every 	     =	1
 IOASCII::out1D_every	     		     = 	1
+IOASCII::out2D_every	     		     = 	0
+IOASCII::out3D_every	     		     = 	0
 IOBasic::outInfo_every   		     = 	1
-
-carpetioascii::out2D_every 		     = 128
 
 iohdf5::out_every			     =	-1
 iohdf5::checkpoint 			     = no
@@ -123,8 +183,8 @@ TimerReport::n_top_timers               = 20
 
 Carpet::init_fill_timelevels                 = yes
 
-whisky_init_data::shocktube_type	=	"xshock"
-whisky_init_data::shock_xpos		=	0.48e0
+whisky_init_data::shocktube_type	=	"sphere"
+whisky_init_data::shock_radius		=	0.02e0   # 0.03e0
 whisky_init_data::shock_case		=	"sod"
 whisky_init_data::change_shock_direction =	no
 
@@ -148,17 +208,17 @@ CarpetLib::poison_new_memory  = yes
 
 cartgrid3d::type                             = "coordbase"
 cartgrid3d::domain                           = "full"
-cartgrid3d::avoid_origin		     = no
+cartgrid3d::avoid_origin		     = yes
 
-coordbase::xmin				     =  0.0
-coordbase::xmax				     =  1.0
-coordbase::ymin				     = -0.00125
-coordbase::ymax				     = +0.00125
-coordbase::zmin				     = -0.00125
-coordbase::zmax				     = +0.00125
-coordbase::dx				     =  0.0025
-coordbase::dy				     =  0.0025
-coordbase::dz				     =  0.0025
+coordbase::xmin				     = -0.1
+coordbase::xmax				     = +0.1
+coordbase::ymin				     = -0.1
+coordbase::ymax				     = +0.1
+coordbase::zmin				     = -0.1
+coordbase::zmax				     = +0.1
+coordbase::dx				     =  0.005
+coordbase::dy				     =  0.005
+coordbase::dz				     =  0.005
 					     
 CoordBase::boundary_staggered_x_lower        = yes
 CoordBase::boundary_staggered_y_lower        = yes
@@ -185,8 +245,7 @@ CarpetRegrid2::verbose      		     = yes
 
 CarpetRegrid2::num_centres 		     = 1
 CarpetRegrid2::num_levels_1 		     = 2
-CarpetRegrid2::position_x_1 		     = 0.4
-CarpetRegrid2::radius_1[1]  		     = 0.1
+CarpetRegrid2::radius_1[1]  		     = 0.05
 
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 # Hydro
@@ -240,6 +299,10 @@ mol::ode_method				     ="icn"
 #mol::ode_method				     ="generic"
 #mol::generic_type			     ="rk"
 #mol::mol_intermediate_steps		     =1
+#mol::ode_method				     ="generic"
+#mol::generic_type			     ="rk"
+#mol::mol_intermediate_steps		     =2
+#mol::mol_num_scratch_levels                  =1
 
 
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
