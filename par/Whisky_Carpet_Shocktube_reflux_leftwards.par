@@ -182,6 +182,8 @@ CoordBase::boundary_size_z_upper 	     = 3
 
 CarpetRegrid2::regrid_every 		     = 0
 CarpetRegrid2::verbose      		     = yes
+CarpetRegrid2::veryverbose     		     = yes
+CarpetRegrid2::snap_to_coarse                = yes
 
 CarpetRegrid2::num_centres 		     = 1
 CarpetRegrid2::num_levels_1 		     = 2

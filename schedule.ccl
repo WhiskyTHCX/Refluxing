@@ -31,6 +31,11 @@ SCHEDULE Refluxing_Register IN MoL_Register
   LANG: C
 } "Register evolved variables"
 
+SCHEDULE Refluxing_ParamCheck AT paramcheck
+{
+  LANG: C
+} "Check parameters"
+
 SCHEDULE Refluxing_Init AT initial
 {
   LANG: Fortran
