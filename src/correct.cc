@@ -113,14 +113,14 @@ void Refluxing_CorrectState (CCTK_ARGUMENTS)
           cout << "Initialising fine grid on level " << reflevel << " to weight 0:\n";
           assert (dim == 3);
 #pragma omp parallel
-          LC_LOOP3(Whisky_Reflux_fine_init,
+          LC_LOOP3(GRHydro_Reflux_fine_init,
                    i,j,k,
                    0,0,0, cctk_lsh[0],cctk_lsh[1],cctk_lsh[2],
                    cctk_lsh[0],cctk_lsh[1],cctk_lsh[2])
           {
             int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
             flux_weight_fine[ind+dir*np] = 0.0;
-          } LC_ENDLOOP3(Whisky_Reflux_fine_init);
+          } LC_ENDLOOP3(GRHydro_Reflux_fine_init);
           
           // Set fine weight to one on boundary
           for (int face=0; face<2; ++face) {
@@ -130,14 +130,14 @@ void Refluxing_CorrectState (CCTK_ARGUMENTS)
               cout << "Setting fine grid boundary on level " << reflevel << " direction " << dir << " face " << face << " to weight 1: " << imin << ":" << imax-1 << "\n";
               assert (dim == 3);
 #pragma omp parallel
-              LC_LOOP3(Whisky_Reflux_fine_boundary,
+              LC_LOOP3(GRHydro_Reflux_fine_boundary,
                        i,j,k,
                        imin[0],imin[1],imin[2], imax[0],imax[1],imax[2],
                        cctk_lsh[0],cctk_lsh[1],cctk_lsh[2])
               {
                 int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
                 flux_weight_fine[ind+dir*np] = 1.0;
-              } LC_ENDLOOP3(Whisky_Reflux_fine_boundary);
+              } LC_ENDLOOP3(GRHydro_Reflux_fine_boundary);
               
             } END_LOOP_OVER_BSET;
           } // for face
@@ -162,14 +162,14 @@ void Refluxing_CorrectState (CCTK_ARGUMENTS)
         cout << "Initialising coarse grid on level " << reflevel << " to weight 0:\n";
         assert (dim == 3);
 #pragma omp parallel
-        LC_LOOP3(Whisky_Reflux_coarse_init,
+        LC_LOOP3(GRHydro_Reflux_coarse_init,
                  i,j,k,
                  0,0,0, cctk_lsh[0],cctk_lsh[1],cctk_lsh[2],
                  cctk_lsh[0],cctk_lsh[1],cctk_lsh[2])
         {
           int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
           flux_weight_coarse[ind+dir*np] = 0.0;
-        } LC_ENDLOOP3(Whisky_Reflux_coarse_init);
+        } LC_ENDLOOP3(GRHydro_Reflux_coarse_init);
         
         // Set coarse weight to one on boundary
         for (int face=0; face<2; ++face) {
@@ -180,14 +180,14 @@ void Refluxing_CorrectState (CCTK_ARGUMENTS)
             // Set weight on coarse grid boundary to one
             assert (dim == 3);
 #pragma omp parallel
-            LC_LOOP3(Whisky_Reflux_coarse_boundary,
+            LC_LOOP3(GRHydro_Reflux_coarse_boundary,
                      i,j,k,
                      imin[0],imin[1],imin[2], imax[0],imax[1],imax[2],
                      cctk_lsh[0],cctk_lsh[1],cctk_lsh[2])
             {
               int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
               flux_weight_coarse[ind+dir*np] = 1.0;
-            } LC_ENDLOOP3(Whisky_Reflux_coarse_boundary);
+            } LC_ENDLOOP3(GRHydro_Reflux_coarse_boundary);
             
           } END_LOOP_OVER_BSET;
         } // for face
@@ -254,11 +254,11 @@ void Refluxing_CorrectState (CCTK_ARGUMENTS)
     correction_total_ptrs[3] = get_varptr (cctkGH, reflevel, "refluxing::sz_correction_total[0]");
     correction_total_ptrs[4] = get_varptr (cctkGH, reflevel, "refluxing::tau_correction_total[0]");
     vector<CCTK_REAL *> var_ptrs(nvars);
-    var_ptrs[0] = get_varptr (cctkGH, reflevel, "Whisky::dens");
-    var_ptrs[1] = get_varptr (cctkGH, reflevel, "Whisky::scon[0]");
-    var_ptrs[2] = get_varptr (cctkGH, reflevel, "Whisky::scon[1]");
-    var_ptrs[3] = get_varptr (cctkGH, reflevel, "Whisky::scon[2]");
-    var_ptrs[4] = get_varptr (cctkGH, reflevel, "Whisky::tau");
+    var_ptrs[0] = get_varptr (cctkGH, reflevel, "GRHydro::dens");
+    var_ptrs[1] = get_varptr (cctkGH, reflevel, "GRHydro::scon[0]");
+    var_ptrs[2] = get_varptr (cctkGH, reflevel, "GRHydro::scon[1]");
+    var_ptrs[3] = get_varptr (cctkGH, reflevel, "GRHydro::scon[2]");
+    var_ptrs[4] = get_varptr (cctkGH, reflevel, "GRHydro::tau");
     
     for (int dir=0; dir<3; ++dir) {
       // Unit vector
@@ -280,14 +280,14 @@ void Refluxing_CorrectState (CCTK_ARGUMENTS)
       for (int n=0; n<nvars; ++n) {
         assert (dim == 3);
 #pragma omp parallel
-        LC_LOOP3(Whisky_Reflux_correction_init,
+        LC_LOOP3(GRHydro_Reflux_correction_init,
                  i,j,k,
                  0,0,0, cctk_lsh[0],cctk_lsh[1],cctk_lsh[2],
                  cctk_lsh[0],cctk_lsh[1],cctk_lsh[2])
         {
           int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
           flux_correction_ptrs.AT(n)[ind+dir*np] = 0.0;
-        } LC_ENDLOOP3(Whisky_Reflux_correction_init);
+        } LC_ENDLOOP3(GRHydro_Reflux_correction_init);
       }
       
       // Restrict the fine grid register into the correction
@@ -350,7 +350,7 @@ void Refluxing_CorrectState (CCTK_ARGUMENTS)
           for (int n=0; n<nvars; ++n) {
             assert (dim == 3);
 #pragma omp parallel
-            LC_LOOP3(Whisky_Reflux_correction_calculate,
+            LC_LOOP3(GRHydro_Reflux_correction_calculate,
                      i,j,k,
                      imin[0],imin[1],imin[2], imax[0],imax[1],imax[2],
                      cctk_lsh[0],cctk_lsh[1],cctk_lsh[2])
@@ -368,7 +368,7 @@ void Refluxing_CorrectState (CCTK_ARGUMENTS)
                 correction_total_ptrs.AT(n)[ind+dir*np+ioff] += difference;
               }
               var_ptrs.AT(n)[ind+ioff] += difference;
-            } LC_ENDLOOP3(Whisky_Reflux_correction_calculate);
+            } LC_ENDLOOP3(GRHydro_Reflux_correction_calculate);
           }
           
         } END_LOOP_OVER_BSET;
@@ -399,7 +399,7 @@ void Refluxing_CorrectState (CCTK_ARGUMENTS)
       for (int n=0; n<nvars; ++n) {
         assert (dim == 3);
 #pragma omp parallel
-        LC_LOOP3(Whisky_Reflux_fine_reset,
+        LC_LOOP3(GRHydro_Reflux_fine_reset,
                  i,j,k,
                  0,0,0, cctk_lsh[0],cctk_lsh[1],cctk_lsh[2],
                  cctk_lsh[0],cctk_lsh[1],cctk_lsh[2])
@@ -408,7 +408,7 @@ void Refluxing_CorrectState (CCTK_ARGUMENTS)
           for (int dir=0; dir<3; ++dir) {
             flux_register_fine_ptrs.AT(n)[ind+dir*np] = 0.0;
           }
-        } LC_ENDLOOP3(Whisky_Reflux_fine_reset);
+        } LC_ENDLOOP3(GRHydro_Reflux_fine_reset);
       }
       
     } END_LOCAL_COMPONENT_LOOP;
@@ -432,7 +432,7 @@ void Refluxing_CorrectState (CCTK_ARGUMENTS)
     for (int n=0; n<nvars; ++n) {
       assert (dim == 3);
 #pragma omp parallel
-      LC_LOOP3(Whisky_Reflux_coarse_reset,
+      LC_LOOP3(GRHydro_Reflux_coarse_reset,
                i,j,k,
                0,0,0, cctk_lsh[0],cctk_lsh[1],cctk_lsh[2],
                cctk_lsh[0],cctk_lsh[1],cctk_lsh[2])
@@ -441,7 +441,7 @@ void Refluxing_CorrectState (CCTK_ARGUMENTS)
         for (int dir=0; dir<3; ++dir) {
           flux_register_coarse_ptrs.AT(n)[ind+dir*np] = 0.0;
         }
-      } LC_ENDLOOP3(Whisky_Reflux_coarse_reset);
+      } LC_ENDLOOP3(GRHydro_Reflux_coarse_reset);
     }
     
   } END_LOCAL_COMPONENT_LOOP;

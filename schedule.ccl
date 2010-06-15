@@ -42,7 +42,7 @@ SCHEDULE Refluxing_Init AT initial
 } "Initialise refluxing variables"
 
 # This is scheduled inside GRHydro's RHS calculation
-SCHEDULE Refluxing_CaptureFluxes IN FluxTerms AFTER Riemann
+SCHEDULE Refluxing_CaptureFluxes IN FluxTerms AFTER Riemann BEFORE GRHydroAdvanceLoop
 {
   LANG: Fortran
 } "Capture and store the flux terms"
