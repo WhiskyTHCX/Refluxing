@@ -112,6 +112,9 @@ io::checkpoint_every 			     = -1
 
 
 #cactus::cctk_timer_output                   =  "FULL"
+TimerReport::out_every                  = 512
+TimerReport::out_filename               = "TimerReport"
+TimerReport::output_all_timers_together = yes
 TimerReport::output_all_timers_readable = yes
 TimerReport::n_top_timers               = 20
 
@@ -135,6 +138,7 @@ grhydro_initdata::change_shock_direction =	no
 
 carpet::veryverbose			     = no
 carpet::verbose				     = no
+carpetlib::output_bboxes                     = yes
 
 carpet::max_refinement_levels                = 2
 carpet::use_buffer_zones 		     = yes
@@ -202,7 +206,7 @@ hydrobase::initial_hydro 		     = "shocktube"
 refluxing::refluxing_debug_variables         = yes
 
 grhydro::grhydro_maxnumevolvedvars	     = 5
-grhydro::grhydro_maxnumsandrvars 		     = 16
+grhydro::grhydro_maxnumsandrvars 	     = 16
 grhydro::evolve_tracer 			     = no
 grhydro::number_of_tracers 		     = 0
 
