@@ -104,6 +104,7 @@ Carpet::init_fill_timelevels                 = yes
 
 grhydro_initdata::shocktube_type	=	"xshock"
 grhydro_initdata::shock_xpos		=	0.48e0
+grhydro_initdata::shock_width		=	0.0
 grhydro_initdata::shock_case		=	"sod"
 
 
@@ -215,6 +216,9 @@ grhydro::initial_rho_abs_min		     =	5e-17
 
 time::dtfac                                  = 0.5
 mol::ode_method				     ="icn"
+#mol::ode_method				     ="generic"
+#mol::generic_type			     ="rk"
+#mol::mol_intermediate_steps		     =1
 
 
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

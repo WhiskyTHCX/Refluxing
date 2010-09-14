@@ -1,6 +1,8 @@
 # Schedule definitions for thorn Refluxing
 
 if (refluxing_debug_variables) {
+  STORAGE: restrict_weight_fine
+  STORAGE: restrict_weight_coarse
   STORAGE: flux_weight_fine
   STORAGE: flux_weight_coarse
 }
@@ -41,20 +43,77 @@ SCHEDULE Refluxing_Init AT initial
   LANG: Fortran
 } "Initialise refluxing variables"
 
-# This is scheduled inside GRHydro's RHS calculation
+
+
+# Capture the fluxes inside GRHydro's RHS calculation
 SCHEDULE Refluxing_CaptureFluxes IN FluxTerms AFTER Riemann BEFORE GRHydroAdvanceLoop
 {
   LANG: Fortran
+  # TODO: Synchronise only once instead of three times
+  SYNC: densflux_stored
+  SYNC: sconflux_stored
+  SYNC: tauflux_stored
 } "Capture and store the flux terms"
+
+# # Synchronise the evolved fluxes
+# SCHEDULE Refluxing_FluxRegisterBoundaries AT postrestrict BEFORE Refluxing_CorrectState
+# {
+#   LANG: C
+#   OPTIONS: level
+#   # We don't need to synchronise the coarse flux registers, since
+#   # their ghost zones will not be used. (Instead, the corrected state
+#   # vector is synchronised.)
+#   #SYNC: densflux_register_coarse
+#   #SYNC: sconflux_register_coarse
+#   #SYNC: tauflux_register_coarse
+#   SYNC: densflux_register_fine
+#   SYNC: sconflux_register_fine
+#   SYNC: tauflux_register_fine
+# } "Apply boundary and symmetry conditions to flux registers"
+
+
 
 # Schedule refluxing before MoL_PostStep, because MoL_PostStep calls
 # con2prim, which has to happen after refluxing
 # TODO: Schedule all boundary conditions etc. after this routine
-SCHEDULE Refluxing_CorrectState AT postrestrict BEFORE MoL_PostStep
-{
-  LANG: C
-  OPTIONS: singlemap
-  STORAGE: densflux_correction
-  STORAGE: sconflux_correction
-  STORAGE: tauflux_correction
-} "Correct coarse grid state"
+
+if (refluxing_debug_variables) {
+  
+  SCHEDULE Refluxing_CorrectState AT postrestrict BEFORE MoL_PostStep
+  {
+    LANG: C
+    OPTIONS: level
+    STORAGE: densflux_correction
+    STORAGE: sconflux_correction
+    STORAGE: tauflux_correction
+    SYNC: GRHydro::dens
+    SYNC: GRHydro::scon
+    SYNC: GRHydro::tau
+    
+    SYNC: restrict_weight_fine
+    SYNC: restrict_weight_coarse
+    SYNC: flux_weight_fine
+    SYNC: flux_weight_coarse
+    SYNC: densflux_correction
+    SYNC: sconflux_correction
+    SYNC: tauflux_correction
+    SYNC: dens_correction_total
+    SYNC: scon_correction_total
+    SYNC: tau_correction_total
+  } "Correct coarse grid state"
+  
+} else {
+  
+  SCHEDULE Refluxing_CorrectState AT postrestrict BEFORE MoL_PostStep
+  {
+    LANG: C
+    OPTIONS: level
+    STORAGE: densflux_correction
+    STORAGE: sconflux_correction
+    STORAGE: tauflux_correction
+    SYNC: GRHydro::dens
+    SYNC: GRHydro::scon
+    SYNC: GRHydro::tau
+  } "Correct coarse grid state"
+  
+}

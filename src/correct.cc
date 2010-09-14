@@ -4,6 +4,7 @@
 
 #include <cassert>
 #include <cstdlib>
+#include <iomanip>
 #include <iostream>
 #include <sstream>
 
@@ -22,17 +23,14 @@ using namespace CarpetLib;
   
   
   
-#define SWITCH_TO_LEVEL(cctkGH, rl)                     \
-  do {                                                  \
-    bool switch_to_level_ = true;                       \
-    assert (is_singlemap_mode());                       \
-    int const rl_ = (rl);                               \
-    int const m_ = Carpet::map;                         \
-    BEGIN_GLOBAL_MODE (cctkGH) {                        \
-      ENTER_LEVEL_MODE (cctkGH, rl_) {                  \
-        ENTER_SINGLEMAP_MODE (cctkGH, m_, CCTK_GF) {
+#define SWITCH_TO_LEVEL(cctkGH, rl)             \
+  do {                                          \
+    bool switch_to_level_ = true;               \
+    assert (is_level_mode());                   \
+    int const rl_ = (rl);                       \
+    BEGIN_GLOBAL_MODE (cctkGH) {                \
+      ENTER_LEVEL_MODE (cctkGH, rl_) {
 #define END_SWITCH_TO_LEVEL                     \
-        } LEAVE_SINGLEMAP_MODE;                 \
       } LEAVE_LEVEL_MODE;                       \
     } END_GLOBAL_MODE;                          \
     assert (switch_to_level_);                  \
@@ -160,61 +158,119 @@ namespace variables {
 static
 void flux_weight_fine_set (cGH const * restrict const cctkGH)
 {
-  assert (is_singlemap_mode());
+  DECLARE_CCTK_PARAMETERS;
+  
+  assert (is_level_mode());
   
   // Set weights on fine grid
   SWITCH_TO_LEVEL (cctkGH, reflevel+1) {
     
-    // Initialise fine weight to zero everywhere
-    cout << "Initialising fine grid on level " << reflevel << " to weight 0:\n";
+    if (veryverbose) {
+      stringstream buf;
+      buf << "Initialising fine grid on level " << reflevel << " to weight 0:";
+      CCTK_INFO (buf.str().c_str());
+    }
     
-    BEGIN_LOCAL_COMPONENT_LOOP (cctkGH, CCTK_GF) {
-      DECLARE_CCTK_ARGUMENTS;
-      dh const& dd = *vdd.AT(Carpet::map);
-      dh::local_dboxes const& local_box =
-        dd.local_boxes.AT(mglevel).AT(reflevel).AT(local_component);
-      
-      ivect const& lsh = ivect::ref(cctk_lsh);
-      int const np = prod(lsh);
-      
-      for (int dir=0; dir<3; ++dir) {
-        // Unit vector
-        ivect const idir = ivect::dir(dir);
-        assert (dim == 3);
+    BEGIN_LOCAL_MAP_LOOP (cctkGH, CCTK_GF) {
+      BEGIN_LOCAL_COMPONENT_LOOP (cctkGH, CCTK_GF) {
+        DECLARE_CCTK_ARGUMENTS;
+        dh const& dd = *vdd.AT(Carpet::map);
+        dh::local_dboxes const& local_box =
+          dd.local_boxes.AT(mglevel).AT(reflevel).AT(local_component);
+        
+        ivect const& lsh = ivect::ref(cctk_lsh);
+        int const np = prod(lsh);
+        
+        
+        
+        // Set fine weight for restricted region
+        
+        // Initialise fine weight to zero
 #pragma omp parallel
-        LC_LOOP3(GRHydro_Reflux_fine_init,
+        LC_LOOP3(GRHydro_Reflux_fine_restrict_init,
                  i,j,k,
                  0,0,0, cctk_lsh[0],cctk_lsh[1],cctk_lsh[2],
                  cctk_lsh[0],cctk_lsh[1],cctk_lsh[2])
         {
           int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
-          flux_weight_fine[ind+dir*np] = 0.0;
-        } LC_ENDLOOP3(GRHydro_Reflux_fine_init);
+          restrict_weight_fine[ind] = 0.0;
+        } LC_ENDLOOP3(GRHydro_Reflux_fine_restrict_init);
         
-        // Set fine weight to one on boundary
-        for (int face=0; face<2; ++face) {
-          ibset const fine_boundary =
-            local_box.fine_boundary[dir][face].shift(idir, 2);
-          LOOP_OVER_BSET(cctkGH, fine_boundary, box, imin, imax) {
-            
-            cout << "Setting fine grid boundary on level " << reflevel << " direction " << dir << " face " << face << " to weight 1: " << imin << ":" << imax-1 << "\n";
-            assert (dim == 3);
+        // Set fine weight in restricted region to one
+        ibset const fine_restrict = local_box.restricted_region;
+        LOOP_OVER_BSET(cctkGH, fine_restrict, box, imin, imax) {
+          
+          if (veryverbose) {
+            stringstream buf;
+            buf << "Setting fine grid restricted region on level " << reflevel << " map " << Carpet::map << " component " << component << " to weight 1: " << imin << ":" << imax-1;
+            CCTK_INFO (buf.str().c_str());
+          }
+          
+          assert (dim == 3);
 #pragma omp parallel
-            LC_LOOP3(GRHydro_Reflux_fine_boundary,
-                     i,j,k,
-                     imin[0],imin[1],imin[2], imax[0],imax[1],imax[2],
-                     cctk_lsh[0],cctk_lsh[1],cctk_lsh[2])
-            {
-              int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
-              flux_weight_fine[ind+dir*np] = 1.0;
-            } LC_ENDLOOP3(GRHydro_Reflux_fine_boundary);
-            
-          } END_LOOP_OVER_BSET;
-        } // for face
+          LC_LOOP3(GRHydro_Reflux_fine_restrict,
+                   i,j,k,
+                   imin[0],imin[1],imin[2], imax[0],imax[1],imax[2],
+                   cctk_lsh[0],cctk_lsh[1],cctk_lsh[2])
+          {
+            int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
+            restrict_weight_fine[ind] = 1.0;
+          } LC_ENDLOOP3(GRHydro_Reflux_fine_restrict);
+          
+        } END_LOOP_OVER_BSET;
         
-      } // for dir
-      
-    } END_LOCAL_COMPONENT_LOOP;
+        
+        
+        // Set fine weight for refluxing boundaries
+        
+        for (int dir=0; dir<3; ++dir) {
+          // Unit vector
+          ivect const idir = ivect::dir(dir);
+          assert (dim == 3);
+          
+          // Initialise fine weight for refluxing boundaries to zero
+#pragma omp parallel
+          LC_LOOP3(GRHydro_Reflux_fine_init,
+                   i,j,k,
+                   0,0,0, cctk_lsh[0],cctk_lsh[1],cctk_lsh[2],
+                   cctk_lsh[0],cctk_lsh[1],cctk_lsh[2])
+          {
+            int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
+            flux_weight_fine[ind+dir*np] = 0.0;
+          } LC_ENDLOOP3(GRHydro_Reflux_fine_init);
+          
+          // Set fine weight for refluxing boundaries to one
+          for (int face=0; face<2; ++face) {
+            ibset const fine_boundary =
+              local_box.fine_boundary[dir][face].shift(idir, 2);
+            LOOP_OVER_BSET(cctkGH, fine_boundary, box, imin, imax) {
+              
+              if (veryverbose) {
+                stringstream buf;
+                buf << "Setting fine grid boundary on level " << reflevel << " map " << Carpet::map << " component " << component << " direction " << dir << " face " << face << " to weight 1: " << imin << ":" << imax-1;
+                CCTK_INFO (buf.str().c_str());
+              }
+              
+              assert (dim == 3);
+#pragma omp parallel
+              LC_LOOP3(GRHydro_Reflux_fine_boundary,
+                       i,j,k,
+                       imin[0],imin[1],imin[2], imax[0],imax[1],imax[2],
+                       cctk_lsh[0],cctk_lsh[1],cctk_lsh[2])
+              {
+                int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
+                flux_weight_fine[ind+dir*np] = 1.0;
+              } LC_ENDLOOP3(GRHydro_Reflux_fine_boundary);
+              
+            } END_LOOP_OVER_BSET;
+          } // for face
+          
+        } // for dir
+        
+        
+        
+      } END_LOCAL_COMPONENT_LOOP;
+    } END_LOCAL_MAP_LOOP;
   } END_SWITCH_TO_LEVEL;
 }
 
@@ -224,60 +280,118 @@ void flux_weight_fine_set (cGH const * restrict const cctkGH)
 static
 void flux_weight_coarse_set (cGH const * restrict const cctkGH)
 {
-  assert (is_singlemap_mode());
+  DECLARE_CCTK_PARAMETERS;
+  
+  assert (is_level_mode());
   
   // Initialise coarse weight to zero everywhere
-  cout << "Initialising coarse grid on level " << reflevel << " to weight 0:\n";
+  if (veryverbose) {
+    stringstream buf;
+    buf << "Initialising coarse grid on level " << reflevel << " to weight 0:";
+    CCTK_INFO (buf.str().c_str());
+  }
   
   // Set weights on coarse grid
-  BEGIN_LOCAL_COMPONENT_LOOP (cctkGH, CCTK_GF) {
-    DECLARE_CCTK_ARGUMENTS;
-    dh const& dd = *vdd.AT(Carpet::map);
-    dh::local_dboxes const& local_box =
-      dd.local_boxes.AT(mglevel).AT(reflevel).AT(local_component);
-    
-    ivect const& lsh = ivect::ref(cctk_lsh);
-    int const np = prod(lsh);
-    
-    for (int dir=0; dir<3; ++dir) {
-      // Unit vector
-      ivect const idir = ivect::dir(dir);
-      assert (dim == 3);
+  BEGIN_LOCAL_MAP_LOOP (cctkGH, CCTK_GF) {
+    BEGIN_LOCAL_COMPONENT_LOOP (cctkGH, CCTK_GF) {
+      DECLARE_CCTK_ARGUMENTS;
+      dh const& dd = *vdd.AT(Carpet::map);
+      dh::local_dboxes const& local_box =
+        dd.local_boxes.AT(mglevel).AT(reflevel).AT(local_component);
+      
+      ivect const& lsh = ivect::ref(cctk_lsh);
+      int const np = prod(lsh);
+      
+      
+      
+      // Set coarse weight for restricted region
+      
+      // Initialise coarse weight to zero
 #pragma omp parallel
-      LC_LOOP3(GRHydro_Reflux_coarse_init,
+      LC_LOOP3(GRHydro_Reflux_coarse_restrict_init,
                i,j,k,
                0,0,0, cctk_lsh[0],cctk_lsh[1],cctk_lsh[2],
                cctk_lsh[0],cctk_lsh[1],cctk_lsh[2])
       {
         int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
-        flux_weight_coarse[ind+dir*np] = 0.0;
-      } LC_ENDLOOP3(GRHydro_Reflux_coarse_init);
+        restrict_weight_coarse[ind] = 0.0;
+      } LC_ENDLOOP3(GRHydro_Reflux_coarse_restrict_init);
       
-      // Set coarse weight to one on boundary
-      for (int face=0; face<2; ++face) {
-        ibset const coarse_boundary =
-          local_box.coarse_boundary[dir][face].shift(idir, 2);
-        LOOP_OVER_BSET(cctkGH, coarse_boundary, box, imin, imax) {
-          
-          cout << "Setting coarse grid boundary on level " << reflevel << " direction " << dir << " face " << face << " to weight 1: " << imin << ":" << imax-1 << "\n";
-          // Set weight on coarse grid boundary to one
-          assert (dim == 3);
+      // Set coarse weight in restricted region to one
+      ibset const coarse_restrict = local_box.restricted_region;
+      LOOP_OVER_BSET(cctkGH, coarse_restrict, box, imin, imax) {
+        
+        if (veryverbose) {
+          stringstream buf;
+          buf << "Setting coarse grid restricted region on level " << reflevel << " map " << Carpet::map << " component " << component << " to weight 1: " << imin << ":" << imax-1;
+          CCTK_INFO (buf.str().c_str());
+        }
+        
+        assert (dim == 3);
 #pragma omp parallel
-          LC_LOOP3(GRHydro_Reflux_coarse_boundary,
-                   i,j,k,
-                   imin[0],imin[1],imin[2], imax[0],imax[1],imax[2],
-                   cctk_lsh[0],cctk_lsh[1],cctk_lsh[2])
-          {
-            int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
-            flux_weight_coarse[ind+dir*np] = 1.0;
-          } LC_ENDLOOP3(GRHydro_Reflux_coarse_boundary);
-          
-        } END_LOOP_OVER_BSET;
-      } // for face
+        LC_LOOP3(GRHydro_Reflux_coarse_restrict,
+                 i,j,k,
+                 imin[0],imin[1],imin[2], imax[0],imax[1],imax[2],
+                 cctk_lsh[0],cctk_lsh[1],cctk_lsh[2])
+        {
+          int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
+          restrict_weight_coarse[ind] = 1.0;
+        } LC_ENDLOOP3(GRHydro_Reflux_coarse_restrict);
+        
+      } END_LOOP_OVER_BSET;
       
-    } // for dir
-    
-  } END_LOCAL_COMPONENT_LOOP;
+      
+      
+      // Set coarse weight for refluxing boundaries
+      
+      for (int dir=0; dir<3; ++dir) {
+        // Unit vector
+        ivect const idir = ivect::dir(dir);
+        assert (dim == 3);
+        
+        // Initialise coarse weight for refluxing boundaries to zero
+#pragma omp parallel
+        LC_LOOP3(GRHydro_Reflux_coarse_init,
+                 i,j,k,
+                 0,0,0, cctk_lsh[0],cctk_lsh[1],cctk_lsh[2],
+                 cctk_lsh[0],cctk_lsh[1],cctk_lsh[2])
+        {
+          int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
+          flux_weight_coarse[ind+dir*np] = 0.0;
+        } LC_ENDLOOP3(GRHydro_Reflux_coarse_init);
+        
+        // Set coarse weight for refluxing boundaries to one
+        for (int face=0; face<2; ++face) {
+          ibset const coarse_boundary =
+            local_box.coarse_boundary[dir][face].shift(idir, 2);
+          LOOP_OVER_BSET(cctkGH, coarse_boundary, box, imin, imax) {
+            
+            if (veryverbose) {
+              stringstream buf;
+              buf << "Setting coarse grid boundary on level " << reflevel << " map " << Carpet::map << " component " << component << " direction " << dir << " face " << face << " to weight 1: " << imin << ":" << imax-1;
+              CCTK_INFO (buf.str().c_str());
+            }
+            
+            assert (dim == 3);
+#pragma omp parallel
+            LC_LOOP3(GRHydro_Reflux_coarse_boundary,
+                     i,j,k,
+                     imin[0],imin[1],imin[2], imax[0],imax[1],imax[2],
+                     cctk_lsh[0],cctk_lsh[1],cctk_lsh[2])
+            {
+              int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
+              flux_weight_coarse[ind+dir*np] = 1.0;
+            } LC_ENDLOOP3(GRHydro_Reflux_coarse_boundary);
+            
+          } END_LOOP_OVER_BSET;
+        } // for face
+        
+      } // for dir
+      
+      
+      
+    } END_LOCAL_COMPONENT_LOOP;
+  } END_LOCAL_MAP_LOOP;
 }
 
 
@@ -288,40 +402,18 @@ void reflux (cGH const * restrict const cctkGH)
 {
   DECLARE_CCTK_PARAMETERS;
   
-  assert (is_singlemap_mode());
+  assert (is_level_mode());
   
   
+  
+  if (veryverbose) {
+    stringstream buf;
+    buf << "Refluxing on level " << reflevel << ":";
+    CCTK_INFO (buf.str().c_str());
+  }
   
   // Initialise the coarse correction to zero everywhere
-  BEGIN_LOCAL_COMPONENT_LOOP (cctkGH, CCTK_GF) {
-    DECLARE_CCTK_ARGUMENTS;
-    ivect const& lsh = ivect::ref(cctk_lsh);
-    int const np = prod(lsh);
-
-    vector<CCTK_REAL *> flux_correction_ptrs =
-      get_varptrs (cctkGH, reflevel, variables::flux_correction);
-    int const nvars = flux_correction_ptrs.size();
-    
-    for (int n=0; n<nvars; ++n) {
-      assert (dim == 3);
-#pragma omp parallel
-      LC_LOOP3(GRHydro_Reflux_correction_coarse_init,
-               i,j,k,
-               0,0,0, cctk_lsh[0],cctk_lsh[1],cctk_lsh[2],
-               cctk_lsh[0],cctk_lsh[1],cctk_lsh[2])
-      {
-        int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
-        for (int dir=0; dir<3; ++dir) {
-          flux_correction_ptrs.AT(n)[ind+dir*np] = 0.0;
-        }
-      } LC_ENDLOOP3(GRHydro_Reflux_correction_coarse_init);
-    } // for n
-  } END_LOCAL_COMPONENT_LOOP;
-  
-  
-  
-  // Set the fine correction to the fine grid register
-  SWITCH_TO_LEVEL (cctkGH, reflevel+1) {
+  BEGIN_LOCAL_MAP_LOOP (cctkGH, CCTK_GF) {
     BEGIN_LOCAL_COMPONENT_LOOP (cctkGH, CCTK_GF) {
       DECLARE_CCTK_ARGUMENTS;
       ivect const& lsh = ivect::ref(cctk_lsh);
@@ -329,26 +421,58 @@ void reflux (cGH const * restrict const cctkGH)
       
       vector<CCTK_REAL *> flux_correction_ptrs =
         get_varptrs (cctkGH, reflevel, variables::flux_correction);
-      vector<CCTK_REAL *> flux_register_fine_ptrs =
-        get_varptrs (cctkGH, reflevel, variables::flux_register_fine);
       int const nvars = flux_correction_ptrs.size();
       
       for (int n=0; n<nvars; ++n) {
         assert (dim == 3);
 #pragma omp parallel
-        LC_LOOP3(GRHydro_Reflux_correction_fine_init,
+        LC_LOOP3(GRHydro_Reflux_correction_coarse_init,
                  i,j,k,
                  0,0,0, cctk_lsh[0],cctk_lsh[1],cctk_lsh[2],
                  cctk_lsh[0],cctk_lsh[1],cctk_lsh[2])
         {
           int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
           for (int dir=0; dir<3; ++dir) {
-            flux_correction_ptrs.AT(n)[ind+dir*np] =
-              flux_register_fine_ptrs.AT(n)[ind+dir*np];
+            flux_correction_ptrs.AT(n)[ind+dir*np] = 0.0;
           }
-        } LC_ENDLOOP3(GRHydro_Reflux_correction_fine_init);
+        } LC_ENDLOOP3(GRHydro_Reflux_correction_coarse_init);
       } // for n
     } END_LOCAL_COMPONENT_LOOP;
+  } END_LOCAL_MAP_LOOP;
+  
+  
+  
+  // Set the fine correction to the fine grid register
+  SWITCH_TO_LEVEL (cctkGH, reflevel+1) {
+    BEGIN_LOCAL_MAP_LOOP (cctkGH, CCTK_GF) {
+      BEGIN_LOCAL_COMPONENT_LOOP (cctkGH, CCTK_GF) {
+        DECLARE_CCTK_ARGUMENTS;
+        ivect const& lsh = ivect::ref(cctk_lsh);
+        int const np = prod(lsh);
+        
+        vector<CCTK_REAL *> flux_correction_ptrs =
+          get_varptrs (cctkGH, reflevel, variables::flux_correction);
+        vector<CCTK_REAL *> flux_register_fine_ptrs =
+          get_varptrs (cctkGH, reflevel, variables::flux_register_fine);
+        int const nvars = flux_correction_ptrs.size();
+        
+        for (int n=0; n<nvars; ++n) {
+          assert (dim == 3);
+#pragma omp parallel
+          LC_LOOP3(GRHydro_Reflux_correction_fine_init,
+                   i,j,k,
+                   0,0,0, cctk_lsh[0],cctk_lsh[1],cctk_lsh[2],
+                   cctk_lsh[0],cctk_lsh[1],cctk_lsh[2])
+          {
+            int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
+            for (int dir=0; dir<3; ++dir) {
+              flux_correction_ptrs.AT(n)[ind+dir*np] =
+                flux_register_fine_ptrs.AT(n)[ind+dir*np];
+            }
+          } LC_ENDLOOP3(GRHydro_Reflux_correction_fine_init);
+        } // for n
+      } END_LOCAL_COMPONENT_LOOP;
+    } END_LOCAL_MAP_LOOP;
   } END_SWITCH_TO_LEVEL;
   
   
@@ -359,14 +483,38 @@ void reflux (cGH const * restrict const cctkGH)
     get_varinds (cctkGH, variables::flux_correction, gis, vis);
     int const nvars = gis.size();
     int const tl = 0;
+    
+#warning "TODO"
+#if 1
+    // Synchronise the fine correction, since the fine grid fluxes
+    // have not been calculated on the ghost points, but they may be
+    // required for restricting
     for (comm_state state; not state.done(); state.step()) {
-      for (int n=0; n<nvars; ++n) {
-        for (int dir=0; dir<3; ++dir) {
-          for (int face=0; face<2; ++face) {
+      for (int m=0; m<maps; ++m) {
+        for (int n=0; n<nvars; ++n) {
+          for (int dir=0; dir<3; ++dir) {
             int const gi = gis.AT(n);
             int const vi = vis.AT(n) + dir;
-            ggf *const gv = arrdata.AT(gi).AT(Carpet::map).data.AT(vi);
-            gv->ref_reflux_all (state, tl, reflevel, mglevel, dir, face);
+            ggf *const gv = arrdata.AT(gi).AT(m).data.AT(vi);
+            gv->sync_all (state, tl, reflevel+1, mglevel);
+          }
+        }
+      }
+    } // for state
+#endif
+    
+    // Restrict
+    for (comm_state state; not state.done(); state.step()) {
+      for (int m=0; m<maps; ++m) {
+        for (int n=0; n<nvars; ++n) {
+          for (int dir=0; dir<3; ++dir) {
+            for (int face=0; face<2; ++face) {
+              int const gi = gis.AT(n);
+              int const vi = vis.AT(n) + dir;
+              ggf *const gv = arrdata.AT(gi).AT(m).data.AT(vi);
+#warning "this must be where things are going wrong; the flux corrections are different on different numbers of processors before the correction is applied"
+              gv->ref_reflux_all (state, tl, reflevel, mglevel, dir, face);
+            }
           }
         }
       }
@@ -377,72 +525,78 @@ void reflux (cGH const * restrict const cctkGH)
   
   // Scale the restricted fine grid register (in the correction), and
   // subtract the coarse grid register; then update the state
-  BEGIN_LOCAL_COMPONENT_LOOP (cctkGH, CCTK_GF) {
-    DECLARE_CCTK_ARGUMENTS;
-    dh const& dd = *vdd.AT(Carpet::map);
-    dh::local_dboxes const& local_box =
-      dd.local_boxes.AT(mglevel).AT(reflevel).AT(local_component);
-    ivect const& lsh = ivect::ref(cctk_lsh);
-    int const np = prod(lsh);
-    
-    rvect const delta (CCTK_DELTA_SPACE(0),
-                       CCTK_DELTA_SPACE(1),
-                       CCTK_DELTA_SPACE(2));
-    
-    vector<CCTK_REAL *> flux_correction_ptrs =
-      get_varptrs (cctkGH, reflevel, variables::flux_correction);
-    vector<CCTK_REAL *> flux_register_coarse_ptrs =
-      get_varptrs (cctkGH, reflevel, variables::flux_register_coarse);
-    vector<CCTK_REAL *> correction_total_ptrs =
-      get_varptrs (cctkGH, reflevel, variables::correction_total);
-    vector<CCTK_REAL *> var_ptrs =
-      get_varptrs (cctkGH, reflevel, variables::var);
-    int const nvars = var_ptrs.size();
-    
-    for (int dir=0; dir<3; ++dir) {
-      // Unit vector
-      ivect const idir = ivect::dir(dir);
-      for (int face=0; face<2; ++face) {
-        // GRHydro uses a different convention for indices of
-        // densities and fluxes
-        int const grhydro_offset = +1;
-        // Choose the cell to the left if on the lower face, or the
-        // cell to the right if on the upper face.
-        int const ioff = index (lsh, ((face ? +1 : 0) - grhydro_offset) * idir);
-        CCTK_REAL const factor = face ? +1 : -1;
-        ibset const coarse_boundary =
-          local_box.coarse_boundary[dir][face].shift(idir, 2);
-        LOOP_OVER_BSET(cctkGH, coarse_boundary, box, imin, imax) {
-          
-          cout << "Refluxing on level " << reflevel << " direction " << dir << " face " << face << ": " << imin << ":" << imax-1 << "\n";
-          
-          for (int n=0; n<nvars; ++n) {
-            assert (dim == 3);
+  BEGIN_LOCAL_MAP_LOOP (cctkGH, CCTK_GF) {
+    BEGIN_LOCAL_COMPONENT_LOOP (cctkGH, CCTK_GF) {
+      DECLARE_CCTK_ARGUMENTS;
+      dh const& dd = *vdd.AT(Carpet::map);
+      dh::local_dboxes const& local_box =
+        dd.local_boxes.AT(mglevel).AT(reflevel).AT(local_component);
+      ivect const& lsh = ivect::ref(cctk_lsh);
+      int const np = prod(lsh);
+      
+      rvect const delta (CCTK_DELTA_SPACE(0),
+                         CCTK_DELTA_SPACE(1),
+                         CCTK_DELTA_SPACE(2));
+      
+      vector<CCTK_REAL *> flux_correction_ptrs =
+        get_varptrs (cctkGH, reflevel, variables::flux_correction);
+      vector<CCTK_REAL *> flux_register_coarse_ptrs =
+        get_varptrs (cctkGH, reflevel, variables::flux_register_coarse);
+      vector<CCTK_REAL *> correction_total_ptrs =
+        get_varptrs (cctkGH, reflevel, variables::correction_total);
+      vector<CCTK_REAL *> var_ptrs =
+        get_varptrs (cctkGH, reflevel, variables::var);
+      int const nvars = var_ptrs.size();
+      
+      for (int dir=0; dir<3; ++dir) {
+        // Unit vector
+        ivect const idir = ivect::dir(dir);
+        for (int face=0; face<2; ++face) {
+          // Apply the correction to the cell to the left (one index
+          // lower) if on the lower face, or the cell to the right
+          // (same index) if on the upper face
+          int const ioff = index (lsh, (face ? 0 : -1) * idir);
+          CCTK_REAL const factor = face ? +1 : -1;
+          ibset const coarse_boundary =
+            local_box.coarse_boundary[dir][face].shift(idir, 2);
+          LOOP_OVER_BSET(cctkGH, coarse_boundary, box, imin, imax) {
+            
+            if (veryverbose) {
+              stringstream buf;
+              buf << "Refluxing on level " << reflevel << " map " << Carpet::map << " component " << component << " direction " << dir << " face " << face << ": " << imin << ":" << imax-1;
+              CCTK_INFO (buf.str().c_str());
+            }
+            
+            for (int n=0; n<nvars; ++n) {
+              assert (dim == 3);
 #pragma omp parallel
-            LC_LOOP3(GRHydro_Reflux_correction_calculate,
-                   i,j,k,
-                   imin[0],imin[1],imin[2], imax[0],imax[1],imax[2],
-                   cctk_lsh[0],cctk_lsh[1],cctk_lsh[2])
-            {
-              int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
-              flux_correction_ptrs.AT(n)[ind+dir*np] -=
-                flux_register_coarse_ptrs.AT(n)[ind+dir*np];
-              // Update the state
-              CCTK_REAL const difference =
-                factor * flux_correction_ptrs.AT(n)[ind+dir*np] / delta[dir];
-              if (refluxing_debug_variables) {
-                // Keep a total of the refluxing changes
-                correction_total_ptrs.AT(n)[ind+dir*np+ioff] += difference;
-              }
-              var_ptrs.AT(n)[ind+ioff] += difference;
-            } LC_ENDLOOP3(GRHydro_Reflux_correction_calculate);
-          }
-          
-        } END_LOOP_OVER_BSET;
-      } // for face
-    } // for dir
-    
-  } END_LOCAL_COMPONENT_LOOP;
+              LC_LOOP3(GRHydro_Reflux_correction_calculate,
+                       i,j,k,
+                       imin[0],imin[1],imin[2], imax[0],imax[1],imax[2],
+                       cctk_lsh[0],cctk_lsh[1],cctk_lsh[2])
+              {
+                int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
+                flux_correction_ptrs.AT(n)[ind+dir*np] -=
+                  flux_register_coarse_ptrs.AT(n)[ind+dir*np];
+                // Update the state
+                CCTK_REAL const difference =
+                  factor * flux_correction_ptrs.AT(n)[ind+dir*np] / delta[dir];
+                if (refluxing_debug_variables) {
+                  // Keep a total of the refluxing changes
+                  correction_total_ptrs.AT(n)[ind+dir*np+ioff] += difference;
+                }
+                if (not suppress_refluxing) {
+                  var_ptrs.AT(n)[ind+ioff] += difference;
+                }
+              } LC_ENDLOOP3(GRHydro_Reflux_correction_calculate);
+            }
+            
+          } END_LOOP_OVER_BSET;
+        } // for face
+      } // for dir
+      
+    } END_LOCAL_COMPONENT_LOOP;
+  } END_LOCAL_MAP_LOOP;
 }
 
 
@@ -451,35 +605,37 @@ void reflux (cGH const * restrict const cctkGH)
 static
 void flux_register_fine_reset (cGH const * restrict const cctkGH)
 {
-  assert (is_singlemap_mode());
+  assert (is_level_mode());
   
   SWITCH_TO_LEVEL (cctkGH, reflevel+1) {
-    BEGIN_LOCAL_COMPONENT_LOOP (cctkGH, CCTK_GF) {
-      DECLARE_CCTK_ARGUMENTS;
-      
-      ivect const& lsh = ivect::ref(cctk_lsh);
-      int const np = prod(lsh);
-      
-      vector<CCTK_REAL *> flux_register_fine_ptrs =
-        get_varptrs (cctkGH, reflevel, variables::flux_register_fine);
-      int const nvars = flux_register_fine_ptrs.size();
-      
-      for (int n=0; n<nvars; ++n) {
-        for (int dir=0; dir<3; ++dir) {
-          assert (dim == 3);
+    BEGIN_LOCAL_MAP_LOOP (cctkGH, CCTK_GF) {
+      BEGIN_LOCAL_COMPONENT_LOOP (cctkGH, CCTK_GF) {
+        DECLARE_CCTK_ARGUMENTS;
+        
+        ivect const& lsh = ivect::ref(cctk_lsh);
+        int const np = prod(lsh);
+        
+        vector<CCTK_REAL *> flux_register_fine_ptrs =
+          get_varptrs (cctkGH, reflevel, variables::flux_register_fine);
+        int const nvars = flux_register_fine_ptrs.size();
+        
+        for (int n=0; n<nvars; ++n) {
+          for (int dir=0; dir<3; ++dir) {
+            assert (dim == 3);
 #pragma omp parallel
-          LC_LOOP3(GRHydro_Reflux_fine_reset,
-                   i,j,k,
-                   0,0,0, cctk_lsh[0],cctk_lsh[1],cctk_lsh[2],
-                   cctk_lsh[0],cctk_lsh[1],cctk_lsh[2])
-          {
-            int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
-            flux_register_fine_ptrs.AT(n)[ind+dir*np] = 0.0;
-          } LC_ENDLOOP3(GRHydro_Reflux_fine_reset);
+            LC_LOOP3(GRHydro_Reflux_fine_reset,
+                     i,j,k,
+                     0,0,0, cctk_lsh[0],cctk_lsh[1],cctk_lsh[2],
+                     cctk_lsh[0],cctk_lsh[1],cctk_lsh[2])
+            {
+              int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
+              flux_register_fine_ptrs.AT(n)[ind+dir*np] = 0.0;
+            } LC_ENDLOOP3(GRHydro_Reflux_fine_reset);
+          }
         }
-      }
-      
-    } END_LOCAL_COMPONENT_LOOP;
+        
+      } END_LOCAL_COMPONENT_LOOP;
+    } END_LOCAL_MAP_LOOP;
   } END_SWITCH_TO_LEVEL;
 }  
 
@@ -489,34 +645,36 @@ void flux_register_fine_reset (cGH const * restrict const cctkGH)
 static
 void flux_register_coarse_reset (cGH const * restrict const cctkGH)
 {
-  assert (is_singlemap_mode());
+  assert (is_level_mode());
   
-  BEGIN_LOCAL_COMPONENT_LOOP (cctkGH, CCTK_GF) {
-    DECLARE_CCTK_ARGUMENTS;
-    
-    ivect const& lsh = ivect::ref(cctk_lsh);
-    int const np = prod(lsh);
-    
-    vector<CCTK_REAL *> flux_register_coarse_ptrs =
-      get_varptrs (cctkGH, reflevel, variables::flux_register_coarse);
-    int const nvars = flux_register_coarse_ptrs.size();
-    
-    for (int n=0; n<nvars; ++n) {
-      for (int dir=0; dir<3; ++dir) {
-        assert (dim == 3);
+  BEGIN_LOCAL_MAP_LOOP (cctkGH, CCTK_GF) {
+    BEGIN_LOCAL_COMPONENT_LOOP (cctkGH, CCTK_GF) {
+      DECLARE_CCTK_ARGUMENTS;
+      
+      ivect const& lsh = ivect::ref(cctk_lsh);
+      int const np = prod(lsh);
+      
+      vector<CCTK_REAL *> flux_register_coarse_ptrs =
+        get_varptrs (cctkGH, reflevel, variables::flux_register_coarse);
+      int const nvars = flux_register_coarse_ptrs.size();
+      
+      for (int n=0; n<nvars; ++n) {
+        for (int dir=0; dir<3; ++dir) {
+          assert (dim == 3);
 #pragma omp parallel
-        LC_LOOP3(GRHydro_Reflux_coarse_reset,
-                 i,j,k,
-                 0,0,0, cctk_lsh[0],cctk_lsh[1],cctk_lsh[2],
-                 cctk_lsh[0],cctk_lsh[1],cctk_lsh[2])
-        {
-          int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
-          flux_register_coarse_ptrs.AT(n)[ind+dir*np] = 0.0;
-        } LC_ENDLOOP3(GRHydro_Reflux_coarse_reset);
+          LC_LOOP3(GRHydro_Reflux_coarse_reset,
+                   i,j,k,
+                   0,0,0, cctk_lsh[0],cctk_lsh[1],cctk_lsh[2],
+                   cctk_lsh[0],cctk_lsh[1],cctk_lsh[2])
+          {
+            int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
+            flux_register_coarse_ptrs.AT(n)[ind+dir*np] = 0.0;
+          } LC_ENDLOOP3(GRHydro_Reflux_coarse_reset);
+        }
       }
-    }
-    
-  } END_LOCAL_COMPONENT_LOOP;
+      
+    } END_LOCAL_COMPONENT_LOOP;
+  } END_LOCAL_MAP_LOOP;
 }
 
 
@@ -527,15 +685,15 @@ void Refluxing_CorrectState (CCTK_ARGUMENTS)
   DECLARE_CCTK_PARAMETERS;
   
   // Sanity check
-  assert (mglevel>=0 and reflevel>=0 and Carpet::map>=0 and component==-1);
+  assert (mglevel>=0 and reflevel>=0 and Carpet::map==-1 and component==-1);
   
   // We reflux on level L by taking a correction from level L+1 into
   // account.  (This corresponds to restriction, where level L is
   // "corrected" from level L+1.)
   
-  CCTK_VInfo (CCTK_THORNSTRING,
-              "Refluxing on patch #%d on level %d from level %d",
-              Carpet::map, reflevel, reflevel+1);
+  if (verbose or veryverbose) {
+    CCTK_VInfo (CCTK_THORNSTRING, "Refluxing on level %d", reflevel);
+  }
   
   // There is no finer level; do nothing
   if (reflevel+1 >= reflevels) return;
@@ -543,9 +701,11 @@ void Refluxing_CorrectState (CCTK_ARGUMENTS)
   
   
   // This works only with cell centred grids
-  gh const& hh = *vhh.AT(Carpet::map);
-  if (hh.refcent != cell_centered) {
-    CCTK_WARN (CCTK_WARN_ABORT, "Refluxing requires cell-centred grids");
+  for (int m=0; m<maps; ++m) {
+    gh const& hh = *vhh.AT(m);
+    if (hh.refcent != cell_centered) {
+      CCTK_WARN (CCTK_WARN_ABORT, "Refluxing requires cell-centred grids");
+    }
   }
   
   

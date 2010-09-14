@@ -301,10 +301,6 @@ mol::ode_method				     ="icn"
 #mol::ode_method				     ="generic"
 #mol::generic_type			     ="rk"
 #mol::mol_intermediate_steps		     =1
-#mol::ode_method				     ="generic"
-#mol::generic_type			     ="rk"
-#mol::mol_intermediate_steps		     =2
-#mol::mol_num_scratch_levels                  =1
 
 
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

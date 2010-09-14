@@ -14,3 +14,15 @@ CCTK_INT Refluxing_MaxNumEvolvedVars "The maximum number of evolved variables us
 BOOLEAN refluxing_debug_variables "Enable storage for refluxing debug variables"
 {
 } "no"
+
+BOOLEAN verbose "Output progress messages" STEERABLE=always
+{
+} "yes"
+
+BOOLEAN veryverbose "Output many progress messages" STEERABLE=always
+{
+} "no"
+
+BOOLEAN suppress_refluxing "Don't apply the actual refluxing terms" STEERABLE=always
+{
+} "no"

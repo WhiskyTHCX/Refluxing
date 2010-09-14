@@ -73,6 +73,40 @@ IOASCII::out1D_vars             =       "grid::coordinates
                                          grhydro::densrhs
                                          grhydro::srhs
                                          grhydro::taurhs
+                                         refluxing::restrict_weight_fine
+                                         refluxing::restrict_weight_coarse
+                                         refluxing::flux_weight_fine
+                                         refluxing::flux_weight_coarse
+                                         refluxing::densflux_register_fine
+                                         refluxing::densflux_register_coarse
+                                         refluxing::densflux_stored
+                                         refluxing::densflux_correction
+                                         refluxing::dens_correction_total
+                                         refluxing::sconflux_register_fine
+                                         refluxing::sconflux_register_coarse
+                                         refluxing::sconflux_stored
+                                         refluxing::sconflux_correction
+                                         refluxing::scon_correction_total
+                                         refluxing::tauflux_register_fine
+                                         refluxing::tauflux_register_coarse
+                                         refluxing::tauflux_stored
+                                         refluxing::tauflux_correction
+                                         refluxing::tau_correction_total"
+
+IOASCII::out3D_vars             =       "grid::coordinates
+                                         carpetreduce::weight
+                                         hydrobase::rho 
+                                         hydrobase::vel 
+                                         hydrobase::eps 
+                                         hydrobase::press 
+                                         grhydro::dens 
+                                         grhydro::scon
+                                         grhydro::tau
+                                         grhydro::densrhs
+                                         grhydro::srhs
+                                         grhydro::taurhs
+                                         refluxing::restrict_weight_fine
+                                         refluxing::restrict_weight_coarse
                                          refluxing::flux_weight_fine
                                          refluxing::flux_weight_coarse
                                          refluxing::densflux_register_fine
@@ -97,6 +131,7 @@ carpet::enable_all_storage 		     = no
 
 carpetioscalar::outScalar_every 	     =	1
 IOASCII::out1D_every	     		     = 	1
+IOASCII::out3D_every	     		     = 	0
 IOBasic::outInfo_every   		     = 	1
 
 carpetioascii::out2D_every 		     = 128
@@ -128,6 +163,7 @@ Carpet::init_fill_timelevels                 = yes
 
 grhydro_initdata::shocktube_type	=	"xshock"
 grhydro_initdata::shock_xpos		=	0.48e0
+grhydro_initdata::shock_width		=	0.0
 grhydro_initdata::shock_case		=	"sod"
 grhydro_initdata::change_shock_direction =	no
 
@@ -204,6 +240,8 @@ hydrobase::prolongation_type 		     = "Lagrange"
 hydrobase::initial_hydro 		     = "shocktube"
 
 refluxing::refluxing_debug_variables         = yes
+refluxing::veryverbose                       = no
+refluxing::suppress_refluxing                = no
 
 grhydro::grhydro_maxnumevolvedvars	     = 5
 grhydro::grhydro_maxnumsandrvars 	     = 16

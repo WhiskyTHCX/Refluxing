@@ -10,12 +10,6 @@ subroutine Refluxing_Init (CCTK_ARGUMENTS)
   DECLARE_CCTK_ARGUMENTS
   DECLARE_CCTK_FUNCTIONS
   DECLARE_CCTK_PARAMETERS
-
-  densflux_correction = 0
-  sxflux_correction   = 0
-  syflux_correction   = 0
-  szflux_correction   = 0
-  tauflux_correction  = 0
   
   densflux_register_fine = 0
   sxflux_register_fine   = 0
