@@ -150,6 +150,10 @@ namespace variables {
     NULL
   };
   
+  char const * restrict const none[] = {
+    NULL
+  };
+  
 } // namespace variables
 
 
@@ -484,8 +488,7 @@ void reflux (cGH const * restrict const cctkGH)
     int const nvars = gis.size();
     int const tl = 0;
     
-#warning "TODO"
-#if 1
+#if 0
     // Synchronise the fine correction, since the fine grid fluxes
     // have not been calculated on the ghost points, but they may be
     // required for restricting
@@ -512,7 +515,6 @@ void reflux (cGH const * restrict const cctkGH)
               int const gi = gis.AT(n);
               int const vi = vis.AT(n) + dir;
               ggf *const gv = arrdata.AT(gi).AT(m).data.AT(vi);
-#warning "this must be where things are going wrong; the flux corrections are different on different numbers of processors before the correction is applied"
               gv->ref_reflux_all (state, tl, reflevel, mglevel, dir, face);
             }
           }
@@ -543,7 +545,9 @@ void reflux (cGH const * restrict const cctkGH)
       vector<CCTK_REAL *> flux_register_coarse_ptrs =
         get_varptrs (cctkGH, reflevel, variables::flux_register_coarse);
       vector<CCTK_REAL *> correction_total_ptrs =
-        get_varptrs (cctkGH, reflevel, variables::correction_total);
+        get_varptrs (cctkGH, reflevel, (refluxing_debug_variables ?
+                                        variables::correction_total :
+                                        variables::none));
       vector<CCTK_REAL *> var_ptrs =
         get_varptrs (cctkGH, reflevel, variables::var);
       int const nvars = var_ptrs.size();
