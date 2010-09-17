@@ -9,18 +9,18 @@ if (refluxing_debug_variables) {
 
 STORAGE: densflux_register_fine[2]
 STORAGE: densflux_register_coarse[2]
+STORAGE: densflux_correction
 STORAGE: densflux_stored
 STORAGE: sconflux_register_fine[2]
 STORAGE: sconflux_register_coarse[2]
+STORAGE: sconflux_correction
 STORAGE: sconflux_stored
 STORAGE: tauflux_register_fine[2]
 STORAGE: tauflux_register_coarse[2]
+STORAGE: tauflux_correction
 STORAGE: tauflux_stored
 
 if (refluxing_debug_variables) {
-  STORAGE: densflux_correction
-  STORAGE: sconflux_correction
-  STORAGE: tauflux_correction
   STORAGE: dens_correction_total
   STORAGE: scon_correction_total
   STORAGE: tau_correction_total
