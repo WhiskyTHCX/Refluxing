@@ -70,7 +70,61 @@ IOASCII::out1D_vars             =       "grid::coordinates
                                          hydrobase::press
                                          grhydro::dens
                                          grhydro::scon
-                                         grhydro::tau"
+                                         grhydro::tau
+                                         grhydro::densrhs
+                                         grhydro::srhs
+                                         grhydro::taurhs
+                                         refluxing::restrict_weight_fine
+                                         refluxing::restrict_weight_coarse
+                                         refluxing::flux_weight_fine
+                                         refluxing::flux_weight_coarse
+                                         refluxing::densflux_register_fine
+                                         refluxing::densflux_register_coarse
+                                         refluxing::densflux_stored
+                                         refluxing::densflux_correction
+                                         refluxing::dens_correction_total
+                                         refluxing::sconflux_register_fine
+                                         refluxing::sconflux_register_coarse
+                                         refluxing::sconflux_stored
+                                         refluxing::sconflux_correction
+                                         refluxing::scon_correction_total
+                                         refluxing::tauflux_register_fine
+                                         refluxing::tauflux_register_coarse
+                                         refluxing::tauflux_stored
+                                         refluxing::tauflux_correction
+                                         refluxing::tau_correction_total"
+
+IOASCII::out3D_vars             =       "grid::coordinates
+                                         carpetreduce::weight
+                                         hydrobase::rho
+                                         hydrobase::vel
+                                         hydrobase::eps
+                                         hydrobase::press
+                                         grhydro::dens
+                                         grhydro::scon
+                                         grhydro::tau
+                                         grhydro::densrhs
+                                         grhydro::srhs
+                                         grhydro::taurhs
+                                         refluxing::restrict_weight_fine
+                                         refluxing::restrict_weight_coarse
+                                         refluxing::flux_weight_fine
+                                         refluxing::flux_weight_coarse
+                                         refluxing::densflux_register_fine
+                                         refluxing::densflux_register_coarse
+                                         refluxing::densflux_stored
+                                         refluxing::densflux_correction
+                                         refluxing::dens_correction_total
+                                         refluxing::sconflux_register_fine
+                                         refluxing::sconflux_register_coarse
+                                         refluxing::sconflux_stored
+                                         refluxing::sconflux_correction
+                                         refluxing::scon_correction_total
+                                         refluxing::tauflux_register_fine
+                                         refluxing::tauflux_register_coarse
+                                         refluxing::tauflux_stored
+                                         refluxing::tauflux_correction
+                                         refluxing::tau_correction_total"
 
 IO::out_dir                                  = $parfile
 io::recover                                  = no
@@ -78,6 +132,7 @@ carpet::enable_all_storage                   = no
 
 carpetioscalar::outScalar_every              =  1
 IOASCII::out1D_every                         =  1
+IOASCII::out3D_every                         =  0
 IOBasic::outInfo_every                       =  1
 
 carpetioascii::out2D_every                   = 128
@@ -105,7 +160,7 @@ TimerReport::n_top_timers               = 20
 Carpet::init_fill_timelevels                 = yes
 
 grhydro_initdata::shocktube_type        =       "xshock"
-grhydro_initdata::shock_xpos            =       0.0
+grhydro_initdata::shock_xpos            =       0.48e0
 grhydro_initdata::shock_case            =       "sod"
 
 
@@ -115,8 +170,9 @@ grhydro_initdata::shock_case            =       "sod"
 
 carpet::veryverbose                          = no
 carpet::verbose                              = no
+carpetlib::output_bboxes                     = yes
 
-carpet::max_refinement_levels                = 3
+carpet::max_refinement_levels                = 2
 carpet::use_buffer_zones                     = yes
 Carpet::refinement_centering                 = "cell"
 Carpet::prolongation_order_space             =  1
@@ -130,15 +186,15 @@ cartgrid3d::type                             = "coordbase"
 cartgrid3d::domain                           = "full"
 cartgrid3d::avoid_origin                     = no
 
-coordbase::xmin                              = -1.0
-coordbase::xmax                              = +1.0
-coordbase::ymin                              = -0.0125
-coordbase::ymax                              = +0.0125
-coordbase::zmin                              = -0.0125
-coordbase::zmax                              = +0.0125
-coordbase::dx                                =  0.025
-coordbase::dy                                =  0.025
-coordbase::dz                                =  0.025
+coordbase::xmin                              =  0.0
+coordbase::xmax                              =  1.0
+coordbase::ymin                              = -0.00125
+coordbase::ymax                              = +0.00125
+coordbase::zmin                              = -0.00125
+coordbase::zmax                              = +0.00125
+coordbase::dx                                =  0.0025
+coordbase::dy                                =  0.0025
+coordbase::dz                                =  0.0025
 
 CoordBase::boundary_staggered_x_lower        = yes
 CoordBase::boundary_staggered_y_lower        = yes
@@ -149,7 +205,7 @@ CoordBase::boundary_staggered_z_upper        = yes
 
 driver::ghost_size                           = 3
 
-cactus::cctk_itlast                          = 200
+cactus::cctk_itlast                          = 100
 
 Carpet::domain_from_coordbase                = yes
 
@@ -162,13 +218,13 @@ CoordBase::boundary_size_z_upper             = 3
 
 CarpetRegrid2::regrid_every                  = 0
 CarpetRegrid2::verbose                       = yes
+CarpetRegrid2::veryverbose                   = yes
 CarpetRegrid2::snap_to_coarse                = yes
 
 CarpetRegrid2::num_centres                   = 1
-CarpetRegrid2::num_levels_1                  = 3
-CarpetRegrid2::position_x_1                  = 0.0
-CarpetRegrid2::radius_1[1]                   = 0.2
-CarpetRegrid2::radius_1[2]                   = 0.1
+CarpetRegrid2::num_levels_1                  = 2
+CarpetRegrid2::position_x_1                  = 0.4
+CarpetRegrid2::radius_1[1]                   = 0.1
 
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 # Hydro
@@ -178,6 +234,10 @@ hydrobase::timelevels                        = 3
 hydrobase::evolution_method                  = "grhydro"
 hydrobase::prolongation_type                 = "Lagrange"
 hydrobase::initial_hydro                     = "shocktube"
+
+refluxing::refluxing_debug_variables         = yes
+refluxing::veryverbose                       = yes
+refluxing::suppress_refluxing                = no
 
 grhydro::grhydro_maxnumevolvedvars           = 5
 grhydro::grhydro_maxnumsandrvars             = 16
@@ -217,6 +277,9 @@ grhydro::initial_rho_abs_min                 =  5e-17
 
 time::dtfac                                  = 0.5
 mol::ode_method                              ="icn"
+#mol::ode_method                              ="generic"
+#mol::generic_type                            ="rk"
+#mol::mol_intermediate_steps                  =1
 
 
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
