@@ -26,7 +26,8 @@ ActiveThorns    =       "time
                         "
 
 # EOS
-ActiveThorns     =      "EOS_Polytrope
+ActiveThorns     =      "EOS_Omni
+                         EOS_Polytrope
                          EOS_Base
                          eos_idealfluid
                         "

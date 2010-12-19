@@ -31,6 +31,7 @@ ActiveThorns    =       "time
 # EOS
 ActiveThorns     =      "EOS_Polytrope
                          EOS_Base
+                         EOS_Omni
                          eos_idealfluid
                         "
 # Hydro
