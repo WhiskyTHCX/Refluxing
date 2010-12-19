@@ -191,14 +191,10 @@ void flux_weight_fine_set (cGH const * restrict const cctkGH)
         
         // Initialise fine weight to zero
 #pragma omp parallel
-        LC_LOOP3(GRHydro_Reflux_fine_restrict_init,
-                 i,j,k,
-                 0,0,0, cctk_lsh[0],cctk_lsh[1],cctk_lsh[2],
-                 cctk_lsh[0],cctk_lsh[1],cctk_lsh[2])
-        {
+        CCTK_LOOP3_ALL(GRHydro_Reflux_fine_restrict_init, cctkGH, i,j,k) {
           int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
           restrict_weight_fine[ind] = 0.0;
-        } LC_ENDLOOP3(GRHydro_Reflux_fine_restrict_init);
+        } CCTK_ENDLOOP3_ALL(GRHydro_Reflux_fine_restrict_init);
         
         // Set fine weight in restricted region to one
         ibset const fine_restrict = local_box.restricted_region;
@@ -212,14 +208,14 @@ void flux_weight_fine_set (cGH const * restrict const cctkGH)
           
           assert (dim == 3);
 #pragma omp parallel
-          LC_LOOP3(GRHydro_Reflux_fine_restrict,
-                   i,j,k,
-                   imin[0],imin[1],imin[2], imax[0],imax[1],imax[2],
-                   cctk_lsh[0],cctk_lsh[1],cctk_lsh[2])
+          CCTK_LOOP3(GRHydro_Reflux_fine_restrict,
+                     i,j,k,
+                     imin[0],imin[1],imin[2], imax[0],imax[1],imax[2],
+                     cctk_lsh[0],cctk_lsh[1],cctk_lsh[2])
           {
             int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
             restrict_weight_fine[ind] = 1.0;
-          } LC_ENDLOOP3(GRHydro_Reflux_fine_restrict);
+          } CCTK_ENDLOOP3(GRHydro_Reflux_fine_restrict);
           
         } END_LOOP_OVER_BSET;
         
@@ -234,14 +230,10 @@ void flux_weight_fine_set (cGH const * restrict const cctkGH)
           
           // Initialise fine weight for refluxing boundaries to zero
 #pragma omp parallel
-          LC_LOOP3(GRHydro_Reflux_fine_init,
-                   i,j,k,
-                   0,0,0, cctk_lsh[0],cctk_lsh[1],cctk_lsh[2],
-                   cctk_lsh[0],cctk_lsh[1],cctk_lsh[2])
-          {
+          CCTK_LOOP3_ALL(GRHydro_Reflux_fine_init, cctkGH, i,j,k) {
             int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
             flux_weight_fine[ind+dir*np] = 0.0;
-          } LC_ENDLOOP3(GRHydro_Reflux_fine_init);
+          } CCTK_ENDLOOP3_ALL(GRHydro_Reflux_fine_init);
           
           // Set fine weight for refluxing boundaries to one
           for (int face=0; face<2; ++face) {
@@ -257,14 +249,14 @@ void flux_weight_fine_set (cGH const * restrict const cctkGH)
               
               assert (dim == 3);
 #pragma omp parallel
-              LC_LOOP3(GRHydro_Reflux_fine_boundary,
-                       i,j,k,
-                       imin[0],imin[1],imin[2], imax[0],imax[1],imax[2],
-                       cctk_lsh[0],cctk_lsh[1],cctk_lsh[2])
+              CCTK_LOOP3(GRHydro_Reflux_fine_boundary,
+                         i,j,k,
+                         imin[0],imin[1],imin[2], imax[0],imax[1],imax[2],
+                         cctk_lsh[0],cctk_lsh[1],cctk_lsh[2])
               {
                 int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
                 flux_weight_fine[ind+dir*np] = 1.0;
-              } LC_ENDLOOP3(GRHydro_Reflux_fine_boundary);
+              } CCTK_ENDLOOP3(GRHydro_Reflux_fine_boundary);
               
             } END_LOOP_OVER_BSET;
           } // for face
@@ -312,14 +304,10 @@ void flux_weight_coarse_set (cGH const * restrict const cctkGH)
       
       // Initialise coarse weight to zero
 #pragma omp parallel
-      LC_LOOP3(GRHydro_Reflux_coarse_restrict_init,
-               i,j,k,
-               0,0,0, cctk_lsh[0],cctk_lsh[1],cctk_lsh[2],
-               cctk_lsh[0],cctk_lsh[1],cctk_lsh[2])
-      {
+      CCTK_LOOP3_ALL(GRHydro_Reflux_coarse_restrict_init, cctkGH, i,j,k) {
         int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
         restrict_weight_coarse[ind] = 0.0;
-      } LC_ENDLOOP3(GRHydro_Reflux_coarse_restrict_init);
+      } CCTK_ENDLOOP3_ALL(GRHydro_Reflux_coarse_restrict_init);
       
       // Set coarse weight in restricted region to one
       ibset const coarse_restrict = local_box.restricted_region;
@@ -333,14 +321,14 @@ void flux_weight_coarse_set (cGH const * restrict const cctkGH)
         
         assert (dim == 3);
 #pragma omp parallel
-        LC_LOOP3(GRHydro_Reflux_coarse_restrict,
-                 i,j,k,
-                 imin[0],imin[1],imin[2], imax[0],imax[1],imax[2],
-                 cctk_lsh[0],cctk_lsh[1],cctk_lsh[2])
+        CCTK_LOOP3(GRHydro_Reflux_coarse_restrict,
+                   i,j,k,
+                   imin[0],imin[1],imin[2], imax[0],imax[1],imax[2],
+                   cctk_lsh[0],cctk_lsh[1],cctk_lsh[2])
         {
           int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
           restrict_weight_coarse[ind] = 1.0;
-        } LC_ENDLOOP3(GRHydro_Reflux_coarse_restrict);
+        } CCTK_ENDLOOP3(GRHydro_Reflux_coarse_restrict);
         
       } END_LOOP_OVER_BSET;
       
@@ -355,14 +343,10 @@ void flux_weight_coarse_set (cGH const * restrict const cctkGH)
         
         // Initialise coarse weight for refluxing boundaries to zero
 #pragma omp parallel
-        LC_LOOP3(GRHydro_Reflux_coarse_init,
-                 i,j,k,
-                 0,0,0, cctk_lsh[0],cctk_lsh[1],cctk_lsh[2],
-                 cctk_lsh[0],cctk_lsh[1],cctk_lsh[2])
-        {
+        CCTK_LOOP3_ALL(GRHydro_Reflux_coarse_init, cctkGH, i,j,k) {
           int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
           flux_weight_coarse[ind+dir*np] = 0.0;
-        } LC_ENDLOOP3(GRHydro_Reflux_coarse_init);
+        } CCTK_ENDLOOP3_ALL(GRHydro_Reflux_coarse_init);
         
         // Set coarse weight for refluxing boundaries to one
         for (int face=0; face<2; ++face) {
@@ -378,14 +362,14 @@ void flux_weight_coarse_set (cGH const * restrict const cctkGH)
             
             assert (dim == 3);
 #pragma omp parallel
-            LC_LOOP3(GRHydro_Reflux_coarse_boundary,
-                     i,j,k,
-                     imin[0],imin[1],imin[2], imax[0],imax[1],imax[2],
-                     cctk_lsh[0],cctk_lsh[1],cctk_lsh[2])
+            CCTK_LOOP3(GRHydro_Reflux_coarse_boundary,
+                       i,j,k,
+                       imin[0],imin[1],imin[2], imax[0],imax[1],imax[2],
+                       cctk_lsh[0],cctk_lsh[1],cctk_lsh[2])
             {
               int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
               flux_weight_coarse[ind+dir*np] = 1.0;
-            } LC_ENDLOOP3(GRHydro_Reflux_coarse_boundary);
+            } CCTK_ENDLOOP3(GRHydro_Reflux_coarse_boundary);
             
           } END_LOOP_OVER_BSET;
         } // for face
@@ -430,16 +414,12 @@ void reflux (cGH const * restrict const cctkGH)
       for (int n=0; n<nvars; ++n) {
         assert (dim == 3);
 #pragma omp parallel
-        LC_LOOP3(GRHydro_Reflux_correction_coarse_init,
-                 i,j,k,
-                 0,0,0, cctk_lsh[0],cctk_lsh[1],cctk_lsh[2],
-                 cctk_lsh[0],cctk_lsh[1],cctk_lsh[2])
-        {
+        CCTK_LOOP3_ALL(GRHydro_Reflux_correction_coarse_init, cctkGH, i,j,k) {
           int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
           for (int dir=0; dir<3; ++dir) {
             flux_correction_ptrs.AT(n)[ind+dir*np] = 0.0;
           }
-        } LC_ENDLOOP3(GRHydro_Reflux_correction_coarse_init);
+        } CCTK_ENDLOOP3_ALL(GRHydro_Reflux_correction_coarse_init);
       } // for n
     } END_LOCAL_COMPONENT_LOOP;
   } END_LOCAL_MAP_LOOP;
@@ -463,17 +443,13 @@ void reflux (cGH const * restrict const cctkGH)
         for (int n=0; n<nvars; ++n) {
           assert (dim == 3);
 #pragma omp parallel
-          LC_LOOP3(GRHydro_Reflux_correction_fine_init,
-                   i,j,k,
-                   0,0,0, cctk_lsh[0],cctk_lsh[1],cctk_lsh[2],
-                   cctk_lsh[0],cctk_lsh[1],cctk_lsh[2])
-          {
+          CCTK_LOOP3_ALL(GRHydro_Reflux_correction_fine_init, cctkGH, i,j,k) {
             int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
             for (int dir=0; dir<3; ++dir) {
               flux_correction_ptrs.AT(n)[ind+dir*np] =
                 flux_register_fine_ptrs.AT(n)[ind+dir*np];
             }
-          } LC_ENDLOOP3(GRHydro_Reflux_correction_fine_init);
+          } CCTK_ENDLOOP3_ALL(GRHydro_Reflux_correction_fine_init);
         } // for n
       } END_LOCAL_COMPONENT_LOOP;
     } END_LOCAL_MAP_LOOP;
@@ -574,10 +550,10 @@ void reflux (cGH const * restrict const cctkGH)
             for (int n=0; n<nvars; ++n) {
               assert (dim == 3);
 #pragma omp parallel
-              LC_LOOP3(GRHydro_Reflux_correction_calculate,
-                       i,j,k,
-                       imin[0],imin[1],imin[2], imax[0],imax[1],imax[2],
-                       cctk_lsh[0],cctk_lsh[1],cctk_lsh[2])
+              CCTK_LOOP3(GRHydro_Reflux_correction_calculate,
+                         i,j,k,
+                         imin[0],imin[1],imin[2], imax[0],imax[1],imax[2],
+                         cctk_lsh[0],cctk_lsh[1],cctk_lsh[2])
               {
                 int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
                 flux_correction_ptrs.AT(n)[ind+dir*np] -=
@@ -592,7 +568,7 @@ void reflux (cGH const * restrict const cctkGH)
                 if (not suppress_refluxing) {
                   var_ptrs.AT(n)[ind+ioff] += difference;
                 }
-              } LC_ENDLOOP3(GRHydro_Reflux_correction_calculate);
+              } CCTK_ENDLOOP3(GRHydro_Reflux_correction_calculate);
             }
             
           } END_LOOP_OVER_BSET;
@@ -627,14 +603,10 @@ void flux_register_fine_reset (cGH const * restrict const cctkGH)
           for (int dir=0; dir<3; ++dir) {
             assert (dim == 3);
 #pragma omp parallel
-            LC_LOOP3(GRHydro_Reflux_fine_reset,
-                     i,j,k,
-                     0,0,0, cctk_lsh[0],cctk_lsh[1],cctk_lsh[2],
-                     cctk_lsh[0],cctk_lsh[1],cctk_lsh[2])
-            {
+            CCTK_LOOP3_ALL(GRHydro_Reflux_fine_reset, cctkGH, i,j,k) {
               int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
               flux_register_fine_ptrs.AT(n)[ind+dir*np] = 0.0;
-            } LC_ENDLOOP3(GRHydro_Reflux_fine_reset);
+            } CCTK_ENDLOOP3_ALL(GRHydro_Reflux_fine_reset);
           }
         }
         
@@ -666,14 +638,10 @@ void flux_register_coarse_reset (cGH const * restrict const cctkGH)
         for (int dir=0; dir<3; ++dir) {
           assert (dim == 3);
 #pragma omp parallel
-          LC_LOOP3(GRHydro_Reflux_coarse_reset,
-                   i,j,k,
-                   0,0,0, cctk_lsh[0],cctk_lsh[1],cctk_lsh[2],
-                   cctk_lsh[0],cctk_lsh[1],cctk_lsh[2])
-          {
+          CCTK_LOOP3_ALL(GRHydro_Reflux_coarse_reset, cctkGH, i,j,k) {
             int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
             flux_register_coarse_ptrs.AT(n)[ind+dir*np] = 0.0;
-          } LC_ENDLOOP3(GRHydro_Reflux_coarse_reset);
+          } CCTK_ENDLOOP3_ALL(GRHydro_Reflux_coarse_reset);
         }
       }
       

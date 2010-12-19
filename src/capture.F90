@@ -24,7 +24,7 @@ subroutine Refluxing_CaptureFluxes (CCTK_ARGUMENTS)
   integer :: imin(3), imax(3), ioff(3)
   
   ! Region with valid data
-  imin(:) = 1 + cctk_nghostzones(:)
+  imin(:) = 1           + cctk_nghostzones(:)
   imax(:) = cctk_lsh(:) - cctk_nghostzones(:)
   ! There is one more flux value in this direction
   imax(flux_direction) = imax(flux_direction) + 1
@@ -43,7 +43,7 @@ subroutine Refluxing_CaptureFluxes (CCTK_ARGUMENTS)
 contains
   
   subroutine capture (dest, source)
-    CCTK_REAL, intent(out) :: dest(:,:,:)
+    CCTK_REAL, intent(out) :: dest  (:,:,:)
     CCTK_REAL, intent(in)  :: source(:,:,:)
     integer :: i,j,k
     

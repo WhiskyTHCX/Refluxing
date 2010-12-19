@@ -1,3 +1,6 @@
 # Configuration definition for thorn Refluxing
 
-REQUIRES Carpet CarpetLib LoopControl
+REQUIRES Carpet CarpetLib
+OPTIONAL LoopControl
+{
+}
