@@ -11,6 +11,20 @@ subroutine Refluxing_Init (CCTK_ARGUMENTS)
   DECLARE_CCTK_FUNCTIONS
   DECLARE_CCTK_PARAMETERS
   
+  integer :: epoch, reflevel, reflevels
+  character(1000) :: msg
+  
+  epoch     = GetRegriddingEpoch(cctkGH)
+  reflevel  = GetRefinementLevel(cctkGH)
+  reflevels = GetRefinementLevels(cctkGH)
+  write (msg, '("Initialising refluxing information on level ",i2," of ",i2," (epoch ",i6,")")') reflevel, reflevels, epoch
+  call CCTK_INFO (msg)
+  
+  ! TODO: Ensure that we are not called "in the middle of things",
+  ! i.e. that we are not asked to reset a level for which we are
+  ! currently integrating fluxes, i.e. which is in between coarse grid
+  ! time steps
+  
   densflux_register_fine = 0
   sxflux_register_fine   = 0
   syflux_register_fine   = 0
@@ -29,5 +43,26 @@ subroutine Refluxing_Init (CCTK_ARGUMENTS)
      sy_correction_total   = 0
      sz_correction_total   = 0
      tau_correction_total  = 0
+  end if
+  
+  ! Initialise some variables so that they don't appear uninitialised
+  ! to NaNChecker, although they are really unused at this point (and
+  ! hence also uninitialised).
+  
+  densflux_correction = -1
+  sxflux_correction   = -1
+  syflux_correction   = -1
+  szflux_correction   = -1
+  tauflux_correction  = -1
+  
+  densflux_stored = -1
+  sxflux_stored   = -1
+  syflux_stored   = -1
+  szflux_stored   = -1
+  tauflux_stored  = -1
+  
+  if (refluxing_debug_variables /= 0) then
+     flux_weight_fine   = -1
+     flux_weight_coarse = -1
   end if
 end subroutine Refluxing_Init

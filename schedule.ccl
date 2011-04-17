@@ -38,7 +38,12 @@ SCHEDULE Refluxing_ParamCheck AT paramcheck
   LANG: C
 } "Check parameters"
 
-SCHEDULE Refluxing_Init AT initial
+SCHEDULE Refluxing_Init AT basegrid
+{
+  LANG: Fortran
+} "Initialise refluxing variables"
+
+SCHEDULE Refluxing_Init AT postregrid
 {
   LANG: Fortran
 } "Initialise refluxing variables"
