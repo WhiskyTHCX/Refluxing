@@ -12,6 +12,7 @@ ActiveThorns    =       "time
                          mol
                          boundary
                          admbase
+                         exact
                          staticconformal
                          spacemask
                          admcoupling
@@ -34,7 +35,6 @@ ActiveThorns     =      "EOS_Omni
 # Hydro
 ActiveThorns     =      "grhydro
                          grhydro_initdata
-                         refluxing
                         "
 
 # I/O
@@ -68,7 +68,11 @@ IOASCII::out1D_vars             =       "grid::coordinates
                                          hydrobase::press
                                          grhydro::dens
                                          grhydro::scon
-                                         grhydro::tau"
+                                         grhydro::tau
+                                         grhydro::densrhs
+                                         grhydro::srhs
+                                         grhydro::taurhs
+"
 
 IO::out_dir                                  = $parfile
 io::recover                                  = no
@@ -77,8 +81,6 @@ carpet::enable_all_storage                   = no
 carpetioscalar::outScalar_every              =  1
 IOASCII::out1D_every                         =  1
 IOBasic::outInfo_every                       =  1
-
-carpetioascii::out2D_every                   = 128
 
 iohdf5::out_every                            =  -1
 iohdf5::checkpoint                           = no
@@ -100,8 +102,8 @@ TimerReport::n_top_timers                    = 20
 
 Carpet::init_fill_timelevels                 = yes
 
-grhydro_initdata::shocktube_type        =       "xshock"
-grhydro_initdata::shock_xpos            =       0.0
+grhydro_initdata::shocktube_type        =       "sphere"
+grhydro_initdata::shock_radius          =       0.02e0
 grhydro_initdata::shock_case            =       "sod"
 
 
@@ -113,7 +115,7 @@ Cactus::cctk_full_warnings                   = yes
 carpet::veryverbose                          = no
 carpet::verbose                              = no
 
-carpet::max_refinement_levels                = 3
+carpet::max_refinement_levels                = 2
 carpet::use_buffer_zones                     = yes
 Carpet::refinement_centering                 = "cell"
 Carpet::prolongation_order_space             =  1
@@ -125,17 +127,17 @@ CarpetLib::poison_new_memory  = yes
 
 cartgrid3d::type                             = "coordbase"
 cartgrid3d::domain                           = "full"
-cartgrid3d::avoid_origin                     = no
+cartgrid3d::avoid_origin                     = yes
 
-coordbase::xmin                              = -1.0
-coordbase::xmax                              = +1.0
-coordbase::ymin                              = -0.0125
-coordbase::ymax                              = +0.0125
-coordbase::zmin                              = -0.0125
-coordbase::zmax                              = +0.0125
-coordbase::dx                                =  0.025
-coordbase::dy                                =  0.025
-coordbase::dz                                =  0.025
+coordbase::xmin                              = -0.1
+coordbase::xmax                              = +0.1
+coordbase::ymin                              = -0.1
+coordbase::ymax                              = +0.1
+coordbase::zmin                              = -0.1
+coordbase::zmax                              = +0.1
+coordbase::dx                                =  0.005
+coordbase::dy                                =  0.005
+coordbase::dz                                =  0.005
 
 CoordBase::boundary_staggered_x_lower        = yes
 CoordBase::boundary_staggered_y_lower        = yes
@@ -146,7 +148,7 @@ CoordBase::boundary_staggered_z_upper        = yes
 
 driver::ghost_size                           = 3
 
-cactus::cctk_itlast                          = 200
+cactus::cctk_itlast                          = 100
 
 Carpet::domain_from_coordbase                = yes
 
@@ -159,19 +161,18 @@ CoordBase::boundary_size_z_upper             = 3
 
 CarpetRegrid2::regrid_every                  = 0
 CarpetRegrid2::verbose                       = yes
+CarpetRegrid2::veryverbose                   = yes
 CarpetRegrid2::snap_to_coarse                = yes
 
 CarpetRegrid2::num_centres                   = 1
-CarpetRegrid2::num_levels_1                  = 3
-CarpetRegrid2::position_x_1                  = 0.0
-CarpetRegrid2::radius_1[1]                   = 0.2
-CarpetRegrid2::radius_1[2]                   = 0.1
+CarpetRegrid2::num_levels_1                  = 2
+CarpetRegrid2::radius_1[1]                   = 0.03
 
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 # Hydro
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-hydrobase::timelevels                        = 3
+hydrobase::timelevels                        = 2
 hydrobase::evolution_method                  = "grhydro"
 hydrobase::prolongation_type                 = "Lagrange"
 hydrobase::initial_hydro                     = "shocktube"
@@ -212,15 +213,36 @@ mol::ode_method                              ="icn"
 
 
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-# Curvature
+# Geometry
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-admbase::evolution_method                    =  "none"
-admbase::metric_type                         =  "physical"
+admbase::initial_data                        = "exact"
+admbase::initial_lapse                       = "exact"
+admbase::initial_shift                       = "exact"
+
+admbase::evolution_method                    = "exact"
+admbase::lapse_evolution_method              = "exact"
+admbase::shift_evolution_method              = "exact"
+
+exact::exact_model                           = "Minkowski"
 
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 # Check for NaNs
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 NaNChecker::check_every                      = 1
-NaNChecker::check_vars                       = "grhydro::dens"
+NaNChecker::check_vars                       = "
+                                         grid::coordinates
+                                         carpetreduce::weight
+                                         hydrobase::rho
+                                         hydrobase::vel
+                                         hydrobase::eps
+                                         hydrobase::press
+                                         grhydro::dens
+                                         grhydro::scon
+                                         grhydro::tau
+                                         grhydro::densrhs
+                                         grhydro::srhs
+                                         grhydro::taurhs
+"
+NaNChecker::action_if_found                  = "terminate"

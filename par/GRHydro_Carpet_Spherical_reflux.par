@@ -12,6 +12,7 @@ ActiveThorns    =       "time
                          mol
                          boundary
                          admbase
+                         exact
                          staticconformal
                          spacemask
                          admcoupling
@@ -29,9 +30,7 @@ ActiveThorns    =       "time
                         "
 
 # EOS
-ActiveThorns     =      "EOS_Polytrope
-                         EOS_Base
-                         eos_idealfluid
+ActiveThorns     =      "EOS_Omni
                         "
 # Hydro
 ActiveThorns     =      "grhydro
@@ -70,7 +69,28 @@ IOASCII::out1D_vars             =       "grid::coordinates
                                          hydrobase::press
                                          grhydro::dens
                                          grhydro::scon
-                                         grhydro::tau"
+                                         grhydro::tau
+                                         grhydro::densrhs
+                                         grhydro::srhs
+                                         grhydro::taurhs
+                                         refluxing::flux_weight_fine
+                                         refluxing::flux_weight_coarse
+                                         refluxing::densflux_register_fine
+                                         refluxing::densflux_register_coarse
+                                         refluxing::densflux_stored
+                                         refluxing::densflux_correction
+                                         refluxing::dens_correction_total
+                                         refluxing::sconflux_register_fine
+                                         refluxing::sconflux_register_coarse
+                                         refluxing::sconflux_stored
+                                         refluxing::sconflux_correction
+                                         refluxing::scon_correction_total
+                                         refluxing::tauflux_register_fine
+                                         refluxing::tauflux_register_coarse
+                                         refluxing::tauflux_stored
+                                         refluxing::tauflux_correction
+                                         refluxing::tau_correction_total
+"
 
 IO::out_dir                                  = $parfile
 io::recover                                  = no
@@ -89,10 +109,8 @@ io::checkpoint_every                         = -1
 # Timer
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-
-#cactus::cctk_timer_output                   =  "FULL"
-TimerReport::output_all_timers_readable = yes
-TimerReport::n_top_timers               = 20
+TimerReport::output_schedule_timers          = no
+TimerReport::n_top_timers                    = 20
 
 
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -111,6 +129,7 @@ grhydro_initdata::shock_case            =       "sod"
 # AMR and Grid Setup
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+Cactus::cctk_full_warnings                   = yes
 carpet::veryverbose                          = no
 carpet::verbose                              = no
 
@@ -171,7 +190,7 @@ CarpetRegrid2::radius_1[1]                   = 0.03
 # Hydro
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-hydrobase::timelevels                        = 3
+hydrobase::timelevels                        = 2
 hydrobase::evolution_method                  = "grhydro"
 hydrobase::prolongation_type                 = "Lagrange"
 hydrobase::initial_hydro                     = "shocktube"
@@ -194,15 +213,10 @@ grhydro::ppm_detect                          = "yes"
 grhydro::grhydro_stencil                     = 3
 grhydro::bound                               = "flat"
 
-grhydro::use_eosgeneral                      = no
-grhydro::eosgeneral_name                     = "Ideal Fluid"
-
-EOS_Polytrope::eos_gamma                     = 1.4
-EOS_Polytrope::eos_k                         = 1
-EOS_Polytrope::use_cgs                       = "yes"
-EOS_Polytrope::gamma_ini                     = 1.4
-
-EOS_IdealFluid::eos_ideal_fluid_gamma        = 1.4
+EOS_Omni::poly_gamma                         = 1.4
+EOS_Omni::poly_gamma_ini                     = 1.4
+EOS_Omni::poly_k                             = 1
+EOS_Omni::gl_gamma                           = 1.4
 
 # Atmosphere
 SpaceMask::use_mask                          =  yes
@@ -220,15 +234,53 @@ mol::ode_method                              ="icn"
 
 
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-# Curvature
+# Geometry
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-admbase::evolution_method                    =  "none"
-admbase::metric_type                         =  "physical"
+admbase::initial_data                        = "exact"
+admbase::initial_lapse                       = "exact"
+admbase::initial_shift                       = "exact"
+
+admbase::evolution_method                    = "exact"
+admbase::lapse_evolution_method              = "exact"
+admbase::shift_evolution_method              = "exact"
+
+exact::exact_model                           = "Minkowski"
 
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 # Check for NaNs
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 NaNChecker::check_every                      = 1
-NaNChecker::check_vars                       = "grhydro::dens"
+NaNChecker::check_vars                       = "
+                                         grid::coordinates
+                                         carpetreduce::weight
+                                         hydrobase::rho
+                                         hydrobase::vel
+                                         hydrobase::eps
+                                         hydrobase::press
+                                         grhydro::dens
+                                         grhydro::scon
+                                         grhydro::tau
+                                         grhydro::densrhs
+                                         grhydro::srhs
+                                         grhydro::taurhs
+                                         refluxing::flux_weight_fine
+                                         refluxing::flux_weight_coarse
+                                         refluxing::densflux_register_fine
+                                         refluxing::densflux_register_coarse
+                                         refluxing::densflux_stored
+                                         refluxing::densflux_correction
+                                         refluxing::dens_correction_total
+                                         refluxing::sconflux_register_fine
+                                         refluxing::sconflux_register_coarse
+                                         refluxing::sconflux_stored
+                                         refluxing::sconflux_correction
+                                         refluxing::scon_correction_total
+                                         refluxing::tauflux_register_fine
+                                         refluxing::tauflux_register_coarse
+                                         refluxing::tauflux_stored
+                                         refluxing::tauflux_correction
+                                         refluxing::tau_correction_total
+"
+NaNChecker::action_if_found                  = "terminate"

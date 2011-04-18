@@ -29,9 +29,7 @@ ActiveThorns    =       "time
                         "
 
 # EOS
-ActiveThorns     =      "EOS_Polytrope
-                         EOS_Base
-                         eos_idealfluid
+ActiveThorns     =      "EOS_Omni
                         "
 # Hydro
 ActiveThorns     =      "grhydro
@@ -91,10 +89,8 @@ io::checkpoint_every                         = -1
 # Timer
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-
-#cactus::cctk_timer_output                   =  "FULL"
-TimerReport::output_all_timers_readable = yes
-TimerReport::n_top_timers               = 20
+TimerReport::output_schedule_timers          = no
+TimerReport::n_top_timers                    = 20
 
 
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -114,6 +110,7 @@ grhydro_initdata::change_shock_direction =      yes
 # AMR and Grid Setup
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+Cactus::cctk_full_warnings                   = yes
 carpet::veryverbose                          = no
 carpet::verbose                              = no
 
@@ -194,15 +191,10 @@ grhydro::ppm_detect                          = "yes"
 grhydro::grhydro_stencil                     = 3
 grhydro::bound                               = "flat"
 
-grhydro::use_eosgeneral                      = no
-grhydro::eosgeneral_name                     = "Ideal Fluid"
-
-EOS_Polytrope::eos_gamma                     = 1.4
-EOS_Polytrope::eos_k                         = 1
-EOS_Polytrope::use_cgs                       = "yes"
-EOS_Polytrope::gamma_ini                     = 1.4
-
-EOS_IdealFluid::eos_ideal_fluid_gamma        = 1.4
+EOS_Omni::poly_gamma                         = 1.4
+EOS_Omni::poly_gamma_ini                     = 1.4
+EOS_Omni::poly_k                             = 1
+EOS_Omni::gl_gamma                           = 1.4
 
 # Atmosphere
 SpaceMask::use_mask                          =  yes
