@@ -26,3 +26,8 @@ BOOLEAN veryverbose "Output many progress messages" STEERABLE=always
 BOOLEAN suppress_refluxing "Don't apply the actual refluxing terms" STEERABLE=always
 {
 } "no"
+
+STRING debug_variables "List of intermediate variables to output for debugging" STEERABLE=always
+{
+  "" :: ""
+} ""

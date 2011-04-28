@@ -23,8 +23,12 @@ subroutine Refluxing_Init (CCTK_ARGUMENTS)
   ! TODO: Ensure that we are not called "in the middle of things",
   ! i.e. that we are not asked to reset a level for which we are
   ! currently integrating fluxes, i.e. which is in between coarse grid
-  ! time steps
+  ! time steps.
   
+  ! TODO: When initialising level L, initialise the coarse grid
+  ! registers stored on level L and the fine grid registers stored on
+  ! level L+1. The code below may be resetting a level that needs to
+  ! be left alone.
   densflux_register_fine = 0
   sxflux_register_fine   = 0
   syflux_register_fine   = 0

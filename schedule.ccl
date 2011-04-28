@@ -43,10 +43,17 @@ SCHEDULE Refluxing_Init AT basegrid
   LANG: Fortran
 } "Initialise refluxing variables"
 
-SCHEDULE Refluxing_Init AT postregrid
+SCHEDULE Refluxing_Reset AT postregrid
 {
-  LANG: Fortran
-} "Initialise refluxing variables"
+  LANG: C
+  OPTIONS: level
+} "Reset refluxing variables after regridding"
+
+SCHEDULE Refluxing_Output AT postregrid AFTER Refluxing_Reset
+{
+  LANG: C
+  OPTIONS: level
+} "Output debug variables"
 
 
 

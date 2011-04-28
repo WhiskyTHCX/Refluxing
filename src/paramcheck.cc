@@ -17,7 +17,7 @@ void Refluxing_ParamCheck (CCTK_ARGUMENTS)
     if (not snap_to_coarse) {
       // Setting this parameter is not really required, but it can't
       // hurt
-      CCTK_PARAMWARN ("Refluxing requires that the fine grid boundaries are aligned with coarse grid boundaries.  Set CarpetRegrid2::snap_to_coarse to ensure this.");
+      CCTK_PARAMWARN ("Refluxing requires that the fine grid boundaries are aligned with coarse grid boundaries. Set CarpetRegrid2::snap_to_coarse to ensure this.");
     }
   }
 }

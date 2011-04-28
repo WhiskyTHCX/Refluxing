@@ -448,6 +448,8 @@ void reflux (cGH const * restrict const cctkGH)
             for (int dir=0; dir<3; ++dir) {
               flux_correction_ptrs.AT(n)[ind+dir*np] =
                 flux_register_fine_ptrs.AT(n)[ind+dir*np];
+#warning "TODO"
+              assert (not isnan(flux_correction_ptrs.AT(n)[ind+dir*np]));
             }
           } CCTK_ENDLOOP3_ALL(GRHydro_Reflux_correction_fine_init);
         } // for n
@@ -558,15 +560,21 @@ void reflux (cGH const * restrict const cctkGH)
                 int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
                 flux_correction_ptrs.AT(n)[ind+dir*np] -=
                   flux_register_coarse_ptrs.AT(n)[ind+dir*np];
+#warning "TODO"
+                assert (not isnan(flux_correction_ptrs.AT(n)[ind+dir*np]));
                 // Update the state
                 CCTK_REAL const difference =
                   factor * flux_correction_ptrs.AT(n)[ind+dir*np] / delta[dir];
                 if (refluxing_debug_variables) {
                   // Keep a total of the refluxing changes
                   correction_total_ptrs.AT(n)[ind+dir*np+ioff] += difference;
+#warning "TODO"
+                  assert (not isnan(correction_total_ptrs.AT(n)[ind+dir*np+ioff]));
                 }
                 if (not suppress_refluxing) {
                   var_ptrs.AT(n)[ind+ioff] += difference;
+#warning "TODO"
+                  assert (not isnan(var_ptrs.AT(n)[ind+ioff]));
                 }
               } CCTK_ENDLOOP3(GRHydro_Reflux_correction_calculate);
             }
@@ -660,11 +668,13 @@ void Refluxing_CorrectState (CCTK_ARGUMENTS)
   assert (mglevel>=0 and reflevel>=0 and Carpet::map==-1 and component==-1);
   
   // We reflux on level L by taking a correction from level L+1 into
-  // account.  (This corresponds to restriction, where level L is
+  // account. (This corresponds to restriction, where level L is
   // "corrected" from level L+1.)
   
   if (verbose or veryverbose) {
-    CCTK_VInfo (CCTK_THORNSTRING, "Refluxing on level %d", reflevel);
+    CCTK_VInfo (CCTK_THORNSTRING,
+                "Refluxing at iteration %d on level %d of %d",
+                cctkGH->cctk_iteration, reflevel, reflevels);
   }
   
   // There is no finer level; do nothing
@@ -691,4 +701,108 @@ void Refluxing_CorrectState (CCTK_ARGUMENTS)
   
   flux_register_fine_reset (cctkGH);
   flux_register_coarse_reset (cctkGH);
+}
+
+
+
+extern "C"
+void Refluxing_Reset (CCTK_ARGUMENTS)
+{
+  DECLARE_CCTK_PARAMETERS;
+  
+  // Sanity check
+  assert (mglevel>=0 and reflevel>=0 and Carpet::map==-1 and component==-1);
+  
+  if (verbose or veryverbose) {
+    CCTK_VInfo (CCTK_THORNSTRING,
+                "Resetting refluxing information at iteration %d on level %d of %d",
+                cctkGH->cctk_iteration, reflevel, reflevels);
+  }
+  
+  assert (reflevel > 0);
+  
+  // This assumes that level L-1 is aligned
+  int const do_every =
+    ipow(mgfact, mglevel) *
+    (maxtimereflevelfact / timereffacts.AT(reflevel - 1));
+  if (not ((cctkGH->cctk_iteration - 1) % do_every == 0)) {
+    cout << "iteration=" << cctkGH->cctk_iteration << "\n"
+         << "do_every=" << do_every << "\n";
+  }
+  assert ((cctkGH->cctk_iteration - 1) % do_every == 0);
+  
+#if 0
+  // There is no finer level; do nothing
+  if (reflevel+1 >= reflevels) return;
+#endif
+  
+  for (int dr=-1; dr<=0; ++dr) {
+  SWITCH_TO_LEVEL (cctkGH, reflevel+dr) {
+    
+    if (dr==-1) {
+      flux_register_fine_reset (cctkGH);
+    }
+    flux_register_coarse_reset (cctkGH);
+    
+    if (refluxing_debug_variables) {
+      BEGIN_LOCAL_MAP_LOOP (cctkGH, CCTK_GF) {
+        BEGIN_LOCAL_COMPONENT_LOOP (cctkGH, CCTK_GF) {
+          DECLARE_CCTK_ARGUMENTS;
+          
+          ivect const& lsh = ivect::ref(cctk_lsh);
+          int const np = prod(lsh);
+          
+          vector<CCTK_REAL *> flux_correction_total_ptrs =
+            get_varptrs (cctkGH, reflevel, variables::correction_total);
+          int const nvars = flux_correction_total_ptrs.size();
+          
+          for (int n=0; n<nvars; ++n) {
+            for (int dir=0; dir<3; ++dir) {
+              assert (dim == 3);
+#pragma omp parallel
+              CCTK_LOOP3_ALL(GRHydro_Reflux_correction_total_reset, cctkGH, i,j,k) {
+                int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
+                flux_correction_total_ptrs.AT(n)[ind+dir*np] = 0.0;
+              } CCTK_ENDLOOP3_ALL(GRHydro_Reflux_correction_total_reset);
+            }
+          }
+          
+        } END_LOCAL_COMPONENT_LOOP;
+      } END_LOCAL_MAP_LOOP;
+    }
+    
+    BEGIN_LOCAL_MAP_LOOP (cctkGH, CCTK_GF) {
+      BEGIN_LOCAL_COMPONENT_LOOP (cctkGH, CCTK_GF) {
+        DECLARE_CCTK_ARGUMENTS;
+        
+        ivect const& lsh = ivect::ref(cctk_lsh);
+        int const np = prod(lsh);
+        
+        vector<CCTK_REAL *> flux_correction_ptrs =
+          get_varptrs (cctkGH, reflevel, variables::flux_correction);
+        int const nvars = flux_correction_ptrs.size();
+        
+        for (int n=0; n<nvars; ++n) {
+          for (int dir=0; dir<3; ++dir) {
+            assert (dim == 3);
+#pragma omp parallel
+            CCTK_LOOP3_ALL(GRHydro_Reflux_correction_reset, cctkGH, i,j,k) {
+              int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
+              flux_correction_ptrs.AT(n)[ind+dir*np] = -1.0;
+            } CCTK_ENDLOOP3_ALL(GRHydro_Reflux_correction_reset);
+          }
+        }
+        
+      } END_LOCAL_COMPONENT_LOOP;
+    } END_LOCAL_MAP_LOOP;
+    
+    if (refluxing_debug_variables) {
+      if (dr==-1) {
+        flux_weight_fine_set (cctkGH);
+      }
+      flux_weight_coarse_set (cctkGH);
+    }
+    
+  } END_SWITCH_TO_LEVEL;
+  } // for dr
 }
