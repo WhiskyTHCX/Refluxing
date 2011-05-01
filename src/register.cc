@@ -29,6 +29,10 @@ void Refluxing_Register (CCTK_ARGUMENTS)
                     "Refluxing::sconflux_stored");
   register_evolved ("Refluxing::tauflux_register_fine",
                     "Refluxing::tauflux_stored");
+  if (CCTK_Equals(Y_e_evolution_method, "GRHydro")) {
+    register_evolved ("Refluxing::yeflux_register_fine",
+                      "Refluxing::yeflux_stored");
+  }
   
   register_evolved ("Refluxing::densflux_register_coarse",
                     "Refluxing::densflux_stored");
@@ -36,4 +40,8 @@ void Refluxing_Register (CCTK_ARGUMENTS)
                     "Refluxing::sconflux_stored");
   register_evolved ("Refluxing::tauflux_register_coarse",
                     "Refluxing::tauflux_stored");
+  if (CCTK_Equals(Y_e_evolution_method, "GRHydro")) {
+    register_evolved ("Refluxing::yeflux_register_coarse",
+                      "Refluxing::yeflux_stored");
+  }
 }

@@ -39,6 +39,9 @@ subroutine Refluxing_CaptureFluxes (CCTK_ARGUMENTS)
   call capture (syflux_stored  (:,:,:,flux_direction), syflux  )
   call capture (szflux_stored  (:,:,:,flux_direction), szflux  )
   call capture (tauflux_stored (:,:,:,flux_direction), tauflux )
+  if (CCTK_EQUALS(Y_e_evolution_method, "GRHydro")) then
+     call capture (yeflux_stored (:,:,:,flux_direction), Y_e_con_flux)
+  end if
   
 contains
   

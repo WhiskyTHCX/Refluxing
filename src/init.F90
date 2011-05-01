@@ -34,12 +34,18 @@ subroutine Refluxing_Init (CCTK_ARGUMENTS)
   syflux_register_fine   = 0
   szflux_register_fine   = 0
   tauflux_register_fine  = 0
+  if (CCTK_EQUALS(Y_e_evolution_method, "GRHydro")) then
+     yeflux_register_fine  = 0
+  end if
   
   densflux_register_coarse = 0
   sxflux_register_coarse   = 0
   syflux_register_coarse   = 0
   szflux_register_coarse   = 0
   tauflux_register_coarse  = 0
+  if (CCTK_EQUALS(Y_e_evolution_method, "GRHydro")) then
+     yeflux_register_coarse  = 0
+  end if
   
   if (refluxing_debug_variables /= 0) then
      dens_correction_total = 0
@@ -47,6 +53,9 @@ subroutine Refluxing_Init (CCTK_ARGUMENTS)
      sy_correction_total   = 0
      sz_correction_total   = 0
      tau_correction_total  = 0
+     if (CCTK_EQUALS(Y_e_evolution_method, "GRHydro")) then
+        ye_correction_total  = 0
+     end if
   end if
   
   ! Initialise some variables so that they don't appear uninitialised
@@ -58,12 +67,18 @@ subroutine Refluxing_Init (CCTK_ARGUMENTS)
   syflux_correction   = -1
   szflux_correction   = -1
   tauflux_correction  = -1
+  if (CCTK_EQUALS(Y_e_evolution_method, "GRHydro")) then
+     yeflux_correction  = -1
+  end if
   
   densflux_stored = -1
   sxflux_stored   = -1
   syflux_stored   = -1
   szflux_stored   = -1
   tauflux_stored  = -1
+  if (CCTK_EQUALS(Y_e_evolution_method, "GRHydro")) then
+     yeflux_stored  = -1
+  end if
   
   if (refluxing_debug_variables /= 0) then
      flux_weight_fine   = -1

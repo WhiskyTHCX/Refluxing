@@ -39,8 +39,26 @@ using namespace CarpetLib;
 
 
 
+// Find out whether a variable should be refluxed. We reflux those
+// variables that have storage.
 static
-CCTK_REAL * restrict
+bool
+reflux_var (cGH const * restrict const cctkGH,
+            char const * restrict const name)
+{
+  int const vi = CCTK_VarIndex(name);
+  assert (vi>=0);
+  int const gi = CCTK_GroupIndexFromVarI (vi);
+  assert (gi >= 0);
+  int const istat = CCTK_QueryGroupStorageI (cctkGH, gi);
+  assert (istat >= 0);
+  return istat > 0;
+}
+
+
+
+static
+CCTK_REAL *
 get_varptr (cGH const * restrict const cctkGH,
             int const rl,
             char const * restrict const name)
@@ -61,10 +79,14 @@ get_varptrs (cGH const * restrict const cctkGH,
              char const * restrict const * restrict const names)
 {
   int nvars = 0;
-  while (names[nvars]) ++nvars;
-  vector<CCTK_REAL *> ptrs(nvars);
+  while (names[nvars] and reflux_var(cctkGH, names[nvars])) ++nvars;
+  vector<CCTK_REAL *> ptrs;
+  ptrs.reserve(nvars);
   for (int n=0; n<nvars; ++n) {
-    ptrs.AT(n) = get_varptr (cctkGH, rl, names[n]);
+    if (reflux_var(cctkGH, names[nvars])) {
+      CCTK_REAL *const ptr = get_varptr (cctkGH, rl, names[n]);
+      ptrs.push_back (ptr);
+    }
   }
   return ptrs;
 }
@@ -93,11 +115,18 @@ get_varinds (cGH const * restrict const cctkGH,
              vector<int>& gis, vector<int>& vis)
 {
   int nvars = 0;
-  while (names[nvars]) ++nvars;
-  gis.resize(nvars);
-  vis.resize(nvars);
+  while (names[nvars] and reflux_var(cctkGH, names[nvars])) ++nvars;
+  assert (gis.empty());
+  assert (vis.empty());
+  gis.reserve(nvars);
+  vis.reserve(nvars);
   for (int n=0; n<nvars; ++n) {
-    get_varind (cctkGH, names[n], gis.AT(n), vis.AT(n));
+    if (reflux_var(cctkGH, names[nvars])) {
+      int gi, vi;
+      get_varind (cctkGH, names[n], gi, vi);
+      gis.push_back (gi);
+      vis.push_back (vi);
+    }
   }
 }
 
@@ -111,7 +140,8 @@ namespace variables {
     "Refluxing::syflux_register_fine[0]",
     "Refluxing::szflux_register_fine[0]",
     "Refluxing::tauflux_register_fine[0]",
-    NULL
+    "Refluxing::yeflux_register_fine[0]",
+     NULL
   };
   
   char const * restrict const flux_register_coarse[] = {
@@ -120,6 +150,7 @@ namespace variables {
     "Refluxing::syflux_register_coarse[0]",
     "Refluxing::szflux_register_coarse[0]",
     "Refluxing::tauflux_register_coarse[0]",
+    "Refluxing::yeflux_register_coarse[0]",
     NULL
   };
   
@@ -129,6 +160,7 @@ namespace variables {
     "Refluxing::syflux_correction[0]",
     "Refluxing::szflux_correction[0]",
     "Refluxing::tauflux_correction[0]",
+    "Refluxing::yeflux_correction[0]",
     NULL
   };
   
@@ -138,6 +170,7 @@ namespace variables {
     "Refluxing::sy_correction_total[0]",
     "Refluxing::sz_correction_total[0]",
     "Refluxing::tau_correction_total[0]",
+    "Refluxing::ye_correction_total[0]",
     NULL
   };
   
@@ -147,6 +180,7 @@ namespace variables {
     "GRHydro::scon[1]",
     "GRHydro::scon[2]",
     "GRHydro::tau",
+    "GRHydro::Y_e_con",
     NULL
   };
   
@@ -728,14 +762,18 @@ void Refluxing_Reset (CCTK_ARGUMENTS)
   if (not ((cctkGH->cctk_iteration - 1) % do_every == 0)) {
     cout << "iteration=" << cctkGH->cctk_iteration << "\n"
          << "do_every=" << do_every << "\n";
+    CCTK_WARN (CCTK_WARN_ABORT,
+               "Cannot regrid with refluxing when the parent levels are not aligned");
   }
-  assert ((cctkGH->cctk_iteration - 1) % do_every == 0);
   
 #if 0
   // There is no finer level; do nothing
   if (reflevel+1 >= reflevels) return;
 #endif
   
+  // Initialise the coarse values twice, so that the coarse values are
+  // also initialised on the finest level. (There should be a cleaner
+  // way to do this.)
   for (int dr=-1; dr<=0; ++dr) {
   SWITCH_TO_LEVEL (cctkGH, reflevel+dr) {
     
