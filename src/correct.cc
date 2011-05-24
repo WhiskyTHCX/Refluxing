@@ -83,7 +83,7 @@ get_varptrs (cGH const * restrict const cctkGH,
   vector<CCTK_REAL *> ptrs;
   ptrs.reserve(nvars);
   for (int n=0; n<nvars; ++n) {
-    if (reflux_var(cctkGH, names[nvars])) {
+    if (reflux_var(cctkGH, names[n])) {
       CCTK_REAL *const ptr = get_varptr (cctkGH, rl, names[n]);
       ptrs.push_back (ptr);
     }
@@ -121,7 +121,7 @@ get_varinds (cGH const * restrict const cctkGH,
   gis.reserve(nvars);
   vis.reserve(nvars);
   for (int n=0; n<nvars; ++n) {
-    if (reflux_var(cctkGH, names[nvars])) {
+    if (reflux_var(cctkGH, names[n])) {
       int gi, vi;
       get_varind (cctkGH, names[n], gi, vi);
       gis.push_back (gi);
