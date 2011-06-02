@@ -52,7 +52,7 @@ reflux_var (cGH const * restrict const cctkGH,
   assert (gi >= 0);
   int const istat = CCTK_QueryGroupStorageI (cctkGH, gi);
   assert (istat >= 0);
-  return istat > 0;
+  return istat > 1;
 }
 
 
