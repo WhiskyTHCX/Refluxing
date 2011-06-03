@@ -52,7 +52,7 @@ reflux_var (cGH const * restrict const cctkGH,
   assert (gi >= 0);
   int const istat = CCTK_QueryGroupStorageI (cctkGH, gi);
   assert (istat >= 0);
-  return istat > 1;
+  return istat > 0;
 }
 
 
@@ -472,8 +472,9 @@ void reflux (cGH const * restrict const cctkGH)
           get_varptrs (cctkGH, reflevel, variables::flux_correction);
         vector<CCTK_REAL *> flux_register_fine_ptrs =
           get_varptrs (cctkGH, reflevel, variables::flux_register_fine);
-        int const nvars = flux_correction_ptrs.size();
-        
+        int const 
+        nvars = flux_correction_ptrs.size();
+                
         for (int n=0; n<nvars; ++n) {
           assert (dim == 3);
 #pragma omp parallel
