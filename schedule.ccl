@@ -102,65 +102,65 @@ SCHEDULE Refluxing_CaptureFluxes IN FluxTerms AFTER Riemann BEFORE GRHydroAdvanc
 if (refluxing_debug_variables) {
   
   if (CCTK_Equals(Y_e_evolution_method, "GRHydro")) {
-  
-   SCHEDULE Refluxing_CorrectState AT postrestrict BEFORE MoL_PostStep
-   {
-    LANG: C
-    OPTIONS: level
-    STORAGE: densflux_correction
-    STORAGE: sconflux_correction
-    STORAGE: tauflux_correction
-    STORAGE: yeflux_correction
-    SYNC: GRHydro::dens
-    SYNC: GRHydro::scon
-    SYNC: GRHydro::tau
-    SYNC: GRHydro::Y_e_con
     
-    SYNC: restrict_weight_fine
-    SYNC: restrict_weight_coarse
-    SYNC: flux_weight_fine
-    SYNC: flux_weight_coarse
-    SYNC: densflux_correction
-    SYNC: sconflux_correction
-    SYNC: tauflux_correction
-    SYNC: yeflux_correction
-    SYNC: dens_correction_total
-    SYNC: scon_correction_total
-    SYNC: tau_correction_total
-    SYNC: ye_correction_total
-   } "Correct coarse grid state"
-  
+    SCHEDULE Refluxing_CorrectState AT postrestrict BEFORE MoL_PostStep
+    {
+      LANG: C
+      OPTIONS: level
+      STORAGE: densflux_correction
+      STORAGE: sconflux_correction
+      STORAGE: tauflux_correction
+      STORAGE: yeflux_correction
+      SYNC: GRHydro::dens
+      SYNC: GRHydro::scon
+      SYNC: GRHydro::tau
+      SYNC: GRHydro::Y_e_con
+      
+      SYNC: restrict_weight_fine
+      SYNC: restrict_weight_coarse
+      SYNC: flux_weight_fine
+      SYNC: flux_weight_coarse
+      SYNC: densflux_correction
+      SYNC: sconflux_correction
+      SYNC: tauflux_correction
+      SYNC: yeflux_correction
+      SYNC: dens_correction_total
+      SYNC: scon_correction_total
+      SYNC: tau_correction_total
+      SYNC: ye_correction_total
+    } "Correct coarse grid state"
+    
   } else {
-  
-   SCHEDULE Refluxing_CorrectState AT postrestrict BEFORE MoL_PostStep
-   {
-    LANG: C
-    OPTIONS: level
-    STORAGE: densflux_correction
-    STORAGE: sconflux_correction
-    STORAGE: tauflux_correction
-    SYNC: GRHydro::dens
-    SYNC: GRHydro::scon
-    SYNC: GRHydro::tau
     
-    SYNC: restrict_weight_fine
-    SYNC: restrict_weight_coarse
-    SYNC: flux_weight_fine
-    SYNC: flux_weight_coarse
-    SYNC: densflux_correction
-    SYNC: sconflux_correction
-    SYNC: tauflux_correction
-    SYNC: dens_correction_total
-    SYNC: scon_correction_total
-    SYNC: tau_correction_total
-   } "Correct coarse grid state"
-  
+    SCHEDULE Refluxing_CorrectState AT postrestrict BEFORE MoL_PostStep
+    {
+      LANG: C
+      OPTIONS: level
+      STORAGE: densflux_correction
+      STORAGE: sconflux_correction
+      STORAGE: tauflux_correction
+      SYNC: GRHydro::dens
+      SYNC: GRHydro::scon
+      SYNC: GRHydro::tau
+      
+      SYNC: restrict_weight_fine
+      SYNC: restrict_weight_coarse
+      SYNC: flux_weight_fine
+      SYNC: flux_weight_coarse
+      SYNC: densflux_correction
+      SYNC: sconflux_correction
+      SYNC: tauflux_correction
+      SYNC: dens_correction_total
+      SYNC: scon_correction_total
+      SYNC: tau_correction_total
+    } "Correct coarse grid state"
+    
   }
   
 } else {
   
   if (CCTK_Equals(Y_e_evolution_method, "GRHydro")) {
-  
+    
     SCHEDULE Refluxing_CorrectState AT postrestrict BEFORE MoL_PostStep
     {
       LANG: C
@@ -174,9 +174,9 @@ if (refluxing_debug_variables) {
       SYNC: GRHydro::tau
       SYNC: GRHydro::Y_e_con
     } "Correct coarse grid state"
-  
+    
   } else {
-     
+    
     SCHEDULE Refluxing_CorrectState AT postrestrict BEFORE MoL_PostStep
     {
       LANG: C
