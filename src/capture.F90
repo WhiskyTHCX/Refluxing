@@ -50,8 +50,20 @@ contains
     CCTK_REAL, intent(in)  :: source(:,:,:)
     integer :: i,j,k
     
-    dest = poison
+    ! Poison destination array
     
+    !$omp parallel do private(i,j,k)
+    do k=1,size(dest,3)
+       do j=1,size(dest,2)
+          do i=1,size(dest,1)
+             dest(i,j,k) = poison
+          end do
+       end do
+    end do
+    
+    ! Copy interior of source to dest
+    
+    !$omp parallel do private(i,j,k)
     do k=imin(3),imax(3)
        do j=imin(2),imax(2)
           do i=imin(1),imax(1)
