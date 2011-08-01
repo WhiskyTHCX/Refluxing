@@ -65,17 +65,21 @@ SCHEDULE Refluxing_Output AT postregrid AFTER Refluxing_Reset
 } "Output debug variables"
 
 
-
 # Capture the fluxes inside GRHydro's RHS calculation
 SCHEDULE Refluxing_CaptureFluxes IN FluxTerms AFTER Riemann BEFORE GRHydroAdvanceLoop
 {
   LANG: Fortran
-  # TODO: Synchronise only once instead of three times
+} "Capture and store the flux terms"
+
+# Sychronize the captured fluxes
+SCHEDULE Refluxing_Sync IN GRHydroRHS AFTER FluxTerms 
+{
+  LANG: Fortran
   SYNC: densflux_stored
   SYNC: sconflux_stored
   SYNC: tauflux_stored
   SYNC: yeflux_stored
-} "Capture and store the flux terms"
+} "Dummy routine for sync"
 
 # # Synchronise the evolved fluxes
 # SCHEDULE Refluxing_FluxRegisterBoundaries AT postrestrict BEFORE Refluxing_CorrectState

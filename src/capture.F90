@@ -3,6 +3,14 @@
 #include "cctk_Functions.h"
 #include "cctk_Parameters.h"
 
+subroutine Refluxing_Sync(CCTK_ARGUMENTS)
+
+  implicit none
+  DECLARE_CCTK_ARGUMENTS
+
+  return
+
+end subroutine Refluxing_Sync
 
 
 subroutine Refluxing_CaptureFluxes (CCTK_ARGUMENTS)
