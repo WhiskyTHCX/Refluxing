@@ -196,9 +196,6 @@ grhydro::ppm_detect                          = "yes"
 grhydro::grhydro_stencil                     = 3
 grhydro::bound                               = "flat"
 
-grhydro::use_eosgeneral                      = no
-grhydro::eosgeneral_name                     = "Ideal Fluid"
-
 EOS_Polytrope::eos_gamma                     = 1.4
 EOS_Polytrope::eos_k                         = 1
 EOS_Polytrope::use_cgs                       = "yes"
