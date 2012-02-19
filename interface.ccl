@@ -122,3 +122,10 @@ CCTK_REAL yeflux_register_coarse[3] TYPE=gf TIMELEVELS=2 TAGS='Prolongation="non
 CCTK_REAL yeflux_stored[3] TYPE=gf TAGS='Prolongation="none" Checkpoint="no" tensortypealias="D" tensorweight=+1.0' "Electron fraction flux"
 CCTK_REAL yeflux_correction[3] TYPE=gf TAGS='Prolongation="restrict" Checkpoint="no" tensortypealias="D" tensorweight=+1.0' "Correction for electron fraction flux"
 CCTK_REAL ye_correction_total[3] TYPE=gf TAGS='Prolongation="none" tensortypealias="D" tensorweight=+1.0' "Accumulated correction for electron fraction flux"
+
+
+
+# Atmosphere mask
+
+CCTK_REAL restricted_atmosphere_mask TYPE=gf TAGS='Prolongation="none" tensortypealias="Scalar"' "Copy of the atmosphere mask that can be restricted"
+# We expect 0 for a normal point, 1 for atmosphere

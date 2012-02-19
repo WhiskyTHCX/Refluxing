@@ -25,6 +25,7 @@ if (CCTK_Equals(Y_e_evolution_method, "GRHydro")) {
   STORAGE: yeflux_correction
   STORAGE: yeflux_stored
 }
+STORAGE: restricted_atmosphere_mask
 
 if (refluxing_debug_variables) {
   STORAGE: dens_correction_total
