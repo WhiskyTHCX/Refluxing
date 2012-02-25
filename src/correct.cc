@@ -3,6 +3,7 @@
 #include <cctk_Parameters.h>
 
 #include <cassert>
+#include <cmath>
 #include <cstdlib>
 #include <iomanip>
 #include <iostream>
@@ -468,6 +469,21 @@ void reflux (cGH const * restrict const cctkGH)
           }
         } CCTK_ENDLOOP3_ALL(GRHydro_Reflux_correction_coarse_init);
       } // for n
+      
+      // Initialise the atmosphere mask (in case it will not be set by
+      // the restriction below)
+      {
+        CCTK_REAL *restrict const mask_coarse_ptr =
+          (CCTK_REAL *) CCTK_VarDataPtrI (cctkGH, 0, mask_coarse_vi);
+        assert (mask_coarse_ptr);
+        
+#pragma omp parallel
+        CCTK_LOOP3_ALL(GRHydro_Reflux_mask_init, cctkGH, i,j,k) {
+          int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
+          mask_coarse_ptr[ind] = 0.0;
+        } CCTK_ENDLOOP3_ALL(GRHydro_Reflux_mask_init);
+      }
+      
     } END_LOCAL_COMPONENT_LOOP;
   } END_LOCAL_MAP_LOOP;
   
@@ -496,8 +512,7 @@ void reflux (cGH const * restrict const cctkGH)
             for (int dir=0; dir<3; ++dir) {
               flux_correction_ptrs.AT(n)[ind+dir*np] =
                 flux_register_fine_ptrs.AT(n)[ind+dir*np];
-#warning "TODO"
-              assert (not isnan(flux_correction_ptrs.AT(n)[ind+dir*np]));
+              // assert (not isnan(flux_correction_ptrs.AT(n)[ind+dir*np]));
             }
           } CCTK_ENDLOOP3_ALL(GRHydro_Reflux_correction_fine_init);
         } // for n
@@ -512,12 +527,12 @@ void reflux (cGH const * restrict const cctkGH)
           assert (mask_coarse_ptr);
           
 #pragma omp parallel
-          CCTK_LOOP3_ALL(GRHydro_Reflux_mask_init, cctkGH, i,j,k) {
+          CCTK_LOOP3_ALL(GRHydro_Reflux_mask_copy, cctkGH, i,j,k) {
             int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
             // Otherwise restricting may cancel atmosphere points:
             assert (mask_fine_ptr[ind] >= 0);
             mask_coarse_ptr[ind] = (CCTK_REAL) mask_fine_ptr[ind];
-          } CCTK_ENDLOOP3_ALL(GRHydro_Reflux_mask_init);
+          } CCTK_ENDLOOP3_ALL(GRHydro_Reflux_mask_copy);
         }
         
       } END_LOCAL_COMPONENT_LOOP;
@@ -643,39 +658,50 @@ void reflux (cGH const * restrict const cctkGH)
                 int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
                 
                 // Check for atmosphere
-                bool const is_atmosphere =  (
-                  mask_fine_ptr  [ind-idelta] != 0.0 || //&& //or
-                  mask_fine_ptr  [ind       ] != 0.0 || //&& //or
-                  mask_coarse_ptr[ind-idelta] != 0.0 || //&& //or
-                  mask_coarse_ptr[ind       ] != 0.0);
+                bool const is_atmosphere =
+                  mask_fine_ptr  [ind-idelta] != 0 or
+                  mask_fine_ptr  [ind       ] != 0 or
+                  mask_coarse_ptr[ind-idelta] != 0.0 or
+                  mask_coarse_ptr[ind       ] != 0.0;
                 
-                const CCTK_REAL limit = is_atmosphere && apply_limiter_atmo ? limiter_atmo_factor : limiter_factor;
+                CCTK_REAL const limit =
+                  is_atmosphere and apply_limiter_atmo
+                  ? limiter_atmo_factor
+                  : limiter_factor;
                 
                 // Calculate flux difference
                 flux_correction_ptrs.AT(n)[ind+dir*np] -=
                   flux_register_coarse_ptrs.AT(n)[ind+dir*np];
-#warning "TODO"
-                assert (not isnan(flux_correction_ptrs.AT(n)[ind+dir*np]));
+                // assert (not isnan(flux_correction_ptrs.AT(n)[ind+dir*np]));
                 
                 // Calculate correction
-                CCTK_REAL const difference =
-                  is_atmosphere && suppress_refluxing_in_atmosphere ?
-                  0.0 :
+                CCTK_REAL difference =
                   factor * flux_correction_ptrs.AT(n)[ind+dir*np] / delta[dir];
+                if (suppress_refluxing_in_atmosphere and is_atmosphere) {
+                  difference = 0.0;
+                }
+                if (apply_limiter or (is_atmosphere and apply_limiter_atmo)) {
+                  CCTK_REAL const absval = fabs(var_ptrs.AT(n)[ind+ioff]);
+                  CCTK_REAL const limfact =
+                    is_atmosphere and apply_limiter_atmo
+                    ? limiter_atmo_factor
+                    : limiter_factor;
+                  CCTK_REAL const maxabsdiff = absval * limfact;
+                  if (fabs(difference) > maxabsdiff) {
+                    difference = copysign(maxabsdiff, difference);
+                  }
+                }
+                
                 if (refluxing_debug_variables) {
                   // Keep a total of the refluxing changes
-                  correction_total_ptrs.AT(n)[ind+dir*np+ioff] += (apply_limiter && is_atmosphere && apply_limiter_atmo) ? 
-                                                                  (fabs(difference) > limit*fabs(var_ptrs.AT(n)[ind+ioff]) ? (difference < 0 ? -1.0 : 1.0)*fabs(var_ptrs.AT(n)[ind+ioff])*limit : difference) : difference;
-#warning "TODO"
-                  assert (not isnan(correction_total_ptrs.AT(n)[ind+dir*np+ioff]));
+                  correction_total_ptrs.AT(n)[ind+dir*np+ioff] += difference;
+                  // assert (not isnan(correction_total_ptrs.AT(n)[ind+dir*np+ioff]));
                 }
                 
                 // Update the state
                 if (not suppress_refluxing) {
-                  var_ptrs.AT(n)[ind+ioff] += (apply_limiter || is_atmosphere && apply_limiter_atmo) ? 
-                                              (fabs(difference) > limit*fabs(var_ptrs.AT(n)[ind+ioff]) ? (difference < 0 ? -1.0 : 1.0)*fabs(var_ptrs.AT(n)[ind+ioff])*limit : difference) : difference;
-#warning "TODO"
-                  assert (not isnan(var_ptrs.AT(n)[ind+ioff]));
+                  var_ptrs.AT(n)[ind+ioff] += difference;
+                  // assert (not isnan(var_ptrs.AT(n)[ind+ioff]));
                   
                 }
                 
