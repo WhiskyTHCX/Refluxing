@@ -38,19 +38,22 @@ STRING debug_variables "List of intermediate variables to output for debugging" 
 } ""
 
 
+
 BOOLEAN suppress_refluxing_in_atmosphere "Don't reflux in atmosphere"
 {
 } no
+
+
 
 BOOLEAN apply_limiter "Shall we limit the flux corrections?"
 {
 } no
 
-
 REAL limiter_factor "Apply limiter if flux correction is larger than '(factor*functuion-value)'"
 {
-  0.0:1.0  :: "Something between 0 and 1"
+  0.0:1.0 :: "Something between 0 and 1"
 } 1.0
+
 
 
 BOOLEAN apply_limiter_atmo "Apply a limiter at atmosphere points"
@@ -59,5 +62,5 @@ BOOLEAN apply_limiter_atmo "Apply a limiter at atmosphere points"
 
 REAL limiter_atmo_factor "Apply limiter if flux correction is larger than '(factor*functuion-value)'"
 {
-  0.0:1.0  :: "Something between 0 and 1"
+  0.0:1.0 :: "Something between 0 and 1"
 } 1.0
