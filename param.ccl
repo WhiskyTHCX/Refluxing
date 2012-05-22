@@ -39,28 +39,28 @@ STRING debug_variables "List of intermediate variables to output for debugging" 
 
 
 
-BOOLEAN suppress_refluxing_in_atmosphere "Don't reflux in atmosphere"
+BOOLEAN suppress_refluxing_in_atmosphere "Don't reflux in atmosphere" STEERABLE=always
 {
 } no
 
 
 
-BOOLEAN apply_limiter "Shall we limit the flux corrections?"
+BOOLEAN apply_limiter "Shall we limit the flux corrections?" STEERABLE=always
 {
 } no
 
-REAL limiter_factor "Apply limiter if flux correction is larger than '(factor*function-value)'"
+REAL limiter_factor "Apply limiter if flux correction is larger than '(factor*function-value)'" STEERABLE=always
 {
   0.0:* :: "Something >= 0"
 } 1.0
 
 
 
-BOOLEAN apply_limiter_atmo "Apply a limiter at atmosphere points"
+BOOLEAN apply_limiter_atmo "Apply a limiter at atmosphere points" STEERABLE=always
 {
 } no
 
-REAL limiter_atmo_factor "Apply limiter if flux correction is larger than '(factor*function-value)'"
+REAL limiter_atmo_factor "Apply limiter if flux correction is larger than '(factor*function-value)'" STEERABLE=always
 {
   0.0:* :: "Something >= 0"
 } 1.0
