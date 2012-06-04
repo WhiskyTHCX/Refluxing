@@ -80,10 +80,12 @@ get_varptrs (cGH const * restrict const cctkGH,
              char const * restrict const * restrict const names)
 {
   int nvars = 0;
-  while (names[nvars] and reflux_var(cctkGH, names[nvars])) ++nvars;
+  for (int n = 0; names[n]; ++n) {
+    if (reflux_var(cctkGH, names[n])) ++nvars;
+  }
   vector<CCTK_REAL *> ptrs;
   ptrs.reserve(nvars);
-  for (int n=0; n<nvars; ++n) {
+  for (int n = 0; names[n]; ++n) {
     if (reflux_var(cctkGH, names[n])) {
       CCTK_REAL *const ptr = get_varptr (cctkGH, rl, names[n]);
       ptrs.push_back (ptr);
@@ -116,12 +118,14 @@ get_varinds (cGH const * restrict const cctkGH,
              vector<int>& gis, vector<int>& vis)
 {
   int nvars = 0;
-  while (names[nvars] and reflux_var(cctkGH, names[nvars])) ++nvars;
+  for (int n = 0; names[n]; ++n) {
+    if (reflux_var(cctkGH, names[n])) ++nvars;
+  }
   assert (gis.empty());
   assert (vis.empty());
   gis.reserve(nvars);
   vis.reserve(nvars);
-  for (int n=0; n<nvars; ++n) {
+  for (int n = 0; names[n]; ++n) {
     if (reflux_var(cctkGH, names[n])) {
       int gi, vi;
       get_varind (cctkGH, names[n], gi, vi);
@@ -142,6 +146,9 @@ namespace variables {
     "Refluxing::szflux_register_fine[0]",
     "Refluxing::tauflux_register_fine[0]",
     "Refluxing::yeflux_register_fine[0]",
+    "Refluxing::Bconsxflux_register_fine[0]",
+    "Refluxing::Bconsyflux_register_fine[0]",
+    "Refluxing::Bconszflux_register_fine[0]",
      NULL
   };
   
@@ -152,6 +159,9 @@ namespace variables {
     "Refluxing::szflux_register_coarse[0]",
     "Refluxing::tauflux_register_coarse[0]",
     "Refluxing::yeflux_register_coarse[0]",
+    "Refluxing::Bconsxflux_register_coarse[0]",
+    "Refluxing::Bconsyflux_register_coarse[0]",
+    "Refluxing::Bconszflux_register_coarse[0]",
     NULL
   };
   
@@ -162,6 +172,9 @@ namespace variables {
     "Refluxing::szflux_correction[0]",
     "Refluxing::tauflux_correction[0]",
     "Refluxing::yeflux_correction[0]",
+    "Refluxing::Bconsxflux_correction[0]",
+    "Refluxing::Bconsyflux_correction[0]",
+    "Refluxing::Bconszflux_correction[0]",
     NULL
   };
   
@@ -172,6 +185,9 @@ namespace variables {
     "Refluxing::sz_correction_total[0]",
     "Refluxing::tau_correction_total[0]",
     "Refluxing::ye_correction_total[0]",
+    "Refluxing::Bconsx_correction_total[0]",
+    "Refluxing::Bconsy_correction_total[0]",
+    "Refluxing::Bconsz_correction_total[0]",
     NULL
   };
   
@@ -182,6 +198,9 @@ namespace variables {
     "GRHydro::scon[2]",
     "GRHydro::tau",
     "GRHydro::Y_e_con",
+    "GRHydro::Bcons[0]",
+    "GRHydro::Bcons[1]",
+    "GRHydro::Bcons[2]",
     NULL
   };
   
