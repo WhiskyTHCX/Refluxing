@@ -7,13 +7,15 @@ USES CCTK_INT MoL_Num_Evolved_Vars
 SHARES: HydroBase
 
 USES KEYWORD Y_e_evolution_method
+USES KEYWORD Bvec_evolution_method
 
 PRIVATE:
 
 CCTK_INT Refluxing_MaxNumEvolvedVars "The maximum number of evolved variables used by Refluxing" ACCUMULATOR-BASE=MethodofLines::MoL_Num_Evolved_Vars STEERABLE=RECOVER
 {
   30:30 :: "refluxing adds 30 (2 * NDIRS * NSTATEVARS) evolved variables"
-  36:36 :: ""
+  36:36 :: "When evolving Y_e"
+  48:48 :: "When evolving Bvec"
 } 30
 
 BOOLEAN refluxing_debug_variables "Enable storage for refluxing debug variables"

@@ -128,19 +128,19 @@ CCTK_REAL Bconsflux_register_fine[3] TYPE=gf TIMELEVELS=2 TAGS='Prolongation="no
 {
   Bconsxflux_register_fine Bconsyflux_register_fine Bconszflux_register_fine
 } "Register for fine grid magnetic field flux"
-CCTK_REAL Bconflux_register_coarse[3] TYPE=gf TIMELEVELS=2 TAGS='Prolongation="none" tensortypealias="UU" tensorweight=+1.0'
+CCTK_REAL Bconsflux_register_coarse[3] TYPE=gf TIMELEVELS=2 TAGS='Prolongation="none" tensortypealias="UU" tensorweight=+1.0'
 {
   Bconsxflux_register_coarse Bconsyflux_register_coarse Bconszflux_register_coarse
 } "Register for coarse grid magnetic field flux"
-CCTK_REAL Bconflux_stored[3] TYPE=gf TAGS='Prolongation="none" Checkpoint="no" tensortypealias="UU" tensorweight=+1.0'
+CCTK_REAL Bconsflux_stored[3] TYPE=gf TAGS='Prolongation="none" Checkpoint="no" tensortypealias="UU" tensorweight=+1.0'
 {
   Bconsxflux_stored Bconsyflux_stored Bconszflux_stored
 } "magnetic field flux"
-CCTK_REAL Bconflux_correction[3] TYPE=gf TAGS='Prolongation="restrict" Checkpoint="no" tensortypealias="UU" tensorweight=+1.0'
+CCTK_REAL Bconsflux_correction[3] TYPE=gf TAGS='Prolongation="restrict" Checkpoint="no" tensortypealias="UU" tensorweight=+1.0'
 {
   Bconsxflux_correction Bconsyflux_correction Bconszflux_correction
 } "Correction for magnetic field flux"
-CCTK_REAL Bcon_correction_total[3] TYPE=gf TAGS='Prolongation="none" tensortypealias="D" tensorweight=+1.0'
+CCTK_REAL Bcons_correction_total[3] TYPE=gf TAGS='Prolongation="none" tensortypealias="D" tensorweight=+1.0'
 {
   Bconsx_correction_total Bconsy_correction_total Bconsz_correction_total
 } "Accumulated correction for magnetic field flux"

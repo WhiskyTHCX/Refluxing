@@ -50,6 +50,11 @@ subroutine Refluxing_CaptureFluxes (CCTK_ARGUMENTS)
   if (CCTK_EQUALS(Y_e_evolution_method, "GRHydro")) then
      call capture (yeflux_stored (:,:,:,flux_direction), Y_e_con_flux)
   end if
+  if (CCTK_EQUALS(Bvec_evolution_method, "GRHydro")) then
+     call capture (Bconsxflux_stored (:,:,:,flux_direction), Bconsxflux)
+     call capture (Bconsyflux_stored (:,:,:,flux_direction), Bconsyflux)
+     call capture (Bconszflux_stored (:,:,:,flux_direction), Bconszflux)
+  end if
   
 contains
   
