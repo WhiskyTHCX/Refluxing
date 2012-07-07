@@ -203,6 +203,11 @@ EOS_Polytrope::gamma_ini                     = 1.4
 
 EOS_IdealFluid::eos_ideal_fluid_gamma        = 1.4
 
+TmunuBase::stress_energy_storage = "yes"
+TmunuBase::stress_energy_at_RHS  = "yes"
+TmunuBase::timelevels            =  3
+TmunuBase::prolongation_type     = "none"
+
 # Atmosphere
 SpaceMask::use_mask                          =  yes
 
