@@ -61,7 +61,10 @@ contains
   subroutine capture (dest, source)
     CCTK_REAL, intent(out) :: dest  (:,:,:)
     CCTK_REAL, intent(in)  :: source(:,:,:)
-    integer :: i,j,k
+    integer, parameter :: rk = kind(dest)
+    integer   :: di,dj,dk
+    integer   :: i,j,k
+    CCTK_REAL :: avg_alp
     
     ! Poison destination array
     
@@ -76,11 +79,15 @@ contains
     
     ! Copy interior of source to dest
     
-    !$omp parallel do private(i,j,k)
+    di = ioff(1)
+    dj = ioff(2)
+    dk = ioff(3)
+    !$omp parallel do private(i,j,k, avg_alp)
     do k=imin(3),imax(3)
        do j=imin(2),imax(2)
           do i=imin(1),imax(1)
-             dest(i,j,k) = source(i+ioff(1),j+ioff(2),k+ioff(3))
+             avg_alp = 0.5_rk * (alp(i,j,k) + alp(i+di,j+dj,k+dk))
+             dest(i,j,k) = avg_alp * source(i+di,j+dj,k+dk)
           end do
        end do
     end do
