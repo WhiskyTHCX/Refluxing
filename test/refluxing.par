@@ -27,9 +27,6 @@ ActiveThorns    =       "time
 
 # EOS
 ActiveThorns     =      "EOS_Omni
-                         EOS_Polytrope
-                         EOS_Base
-                         eos_idealfluid
                         "
 # Hydro
 ActiveThorns     =      "grhydro
@@ -119,6 +116,7 @@ carpet::verbose                              = no
 
 carpet::max_refinement_levels                = 2
 carpet::use_buffer_zones                     = yes
+carpet::use_overlap_zones                    = yes
 Carpet::refinement_centering                 = "cell"
 Carpet::prolongation_order_space             =  1
 Carpet::prolongation_order_time              =  1
@@ -196,12 +194,10 @@ grhydro::ppm_detect                          = "yes"
 grhydro::grhydro_stencil                     = 3
 grhydro::bound                               = "flat"
 
-EOS_Polytrope::eos_gamma                     = 1.4
-EOS_Polytrope::eos_k                         = 1
-EOS_Polytrope::use_cgs                       = "yes"
-EOS_Polytrope::gamma_ini                     = 1.4
-
-EOS_IdealFluid::eos_ideal_fluid_gamma        = 1.4
+EOS_Omni::poly_gamma                         = 1.4
+EOS_Omni::poly_gamma_ini                     = 1.4
+EOS_Omni::poly_k                             = 1
+EOS_Omni::gl_gamma                           = 1.4
 
 TmunuBase::stress_energy_storage = "yes"
 TmunuBase::stress_energy_at_RHS  = "yes"

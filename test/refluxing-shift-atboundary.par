@@ -175,8 +175,8 @@ CarpetRegrid2::snap_to_coarse                = yes
 
 CarpetRegrid2::num_centres                   = 1
 CarpetRegrid2::num_levels_1                  = 2
-CarpetRegrid2::position_x_1                  = -0.7
-CarpetRegrid2::radius_1[1]                   =  0.9
+CarpetRegrid2::position_x_1                  = -0.8
+CarpetRegrid2::radius_1[1]                   =  0.8
 
 Periodic::periodic_x                         = yes
 
@@ -246,4 +246,4 @@ admbase::metric_timelevels                   =  3
 admbase::lapse_timelevels                    =  3
 admbase::shift_timelevels                    =  3
 
-Minkowski::shiftaddx                         =  0.94
+Minkowski::shiftaddx                         =  0.7

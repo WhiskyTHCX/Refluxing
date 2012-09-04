@@ -25,8 +25,6 @@ ActiveThorns    =       "time
                          loopcontrol
                          hydrobase
                          ioutil
-                         periodic
-                         slab
                         "
 
 # EOS
@@ -139,8 +137,8 @@ cartgrid3d::type                             = "coordbase"
 cartgrid3d::domain                           = "full"
 cartgrid3d::avoid_origin                     = no
 
-coordbase::xmin                              = -2.0
-coordbase::xmax                              = +2.0
+coordbase::xmin                              = -1.0
+coordbase::xmax                              = +1.0
 coordbase::ymin                              = -0.0125
 coordbase::ymax                              = +0.0125
 coordbase::zmin                              = -0.0125
@@ -175,10 +173,8 @@ CarpetRegrid2::snap_to_coarse                = yes
 
 CarpetRegrid2::num_centres                   = 1
 CarpetRegrid2::num_levels_1                  = 2
-CarpetRegrid2::position_x_1                  = -0.7
-CarpetRegrid2::radius_1[1]                   =  0.9
-
-Periodic::periodic_x                         = yes
+CarpetRegrid2::position_x_1                  = 0.0
+CarpetRegrid2::radius_1[1]                   = 0.2
 
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 # Hydro
@@ -246,4 +242,4 @@ admbase::metric_timelevels                   =  3
 admbase::lapse_timelevels                    =  3
 admbase::shift_timelevels                    =  3
 
-Minkowski::shiftaddx                         =  0.94
+Minkowski::lapsefactor                       =  0.5
