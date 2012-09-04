@@ -3,20 +3,38 @@
 SHARES: MethodOfLines
 
 USES CCTK_INT MoL_Num_Evolved_Vars
+USES CCTK_INT MoL_Num_Evolved_Vars_Slow
 
 SHARES: HydroBase
 
 USES KEYWORD Y_e_evolution_method
 USES KEYWORD Bvec_evolution_method
 
+SHARES: GRHydro
+
+USES BOOLEAN use_MoL_slow_multirate_sector
+
 PRIVATE:
 
 CCTK_INT Refluxing_MaxNumEvolvedVars "The maximum number of evolved variables used by Refluxing" ACCUMULATOR-BASE=MethodofLines::MoL_Num_Evolved_Vars STEERABLE=RECOVER
 {
+  0:0   :: ""
   30:30 :: "refluxing adds 30 (2 * NDIRS * NSTATEVARS) evolved variables"
   36:36 :: "When evolving Y_e"
   48:48 :: "When evolving Bvec"
 } 30
+
+CCTK_INT Refluxing_MaxNumEvolvedVarsSlow "The maximum number of evolved variables used by Refluxing" ACCUMULATOR-BASE=MethodofLines::MoL_Num_Evolved_Vars_Slow STEERABLE=RECOVER
+{
+  0:0   :: ""
+  30:30 :: "refluxing adds 30 (2 * NDIRS * NSTATEVARS) evolved variables"
+  36:36 :: "When evolving Y_e"
+  48:48 :: "When evolving Bvec"
+} 0
+
+BOOLEAN reflux_prolongate "Prolongate during refluxing to apply part of the correction to the fine grid" STEERABLE=always
+{
+} "no"
 
 BOOLEAN refluxing_debug_variables "Enable storage for refluxing debug variables"
 {

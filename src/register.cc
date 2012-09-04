@@ -7,9 +7,17 @@
 static
 void register_evolved (char const* const group, char const* const rhs)
 {
+  DECLARE_CCTK_PARAMETERS;
+  
+  CCTK_INT (*register_group) (CCTK_INT EvolvedIndex, CCTK_INT RHSIndex);
+  if (use_MoL_slow_multirate_sector) {
+    register_group = MoLRegisterEvolvedGroupSlow;
+  } else {
+    register_group = MoLRegisterEvolvedGroup;
+  }
+  
   int const ierr =
-    MoLRegisterEvolvedGroup (CCTK_GroupIndex(group),
-                             CCTK_GroupIndex(rhs));
+    register_group (CCTK_GroupIndex(group), CCTK_GroupIndex(rhs));
   if (ierr) {
     CCTK_WARN (CCTK_WARN_ABORT, "Could not register evolved groups");
   }

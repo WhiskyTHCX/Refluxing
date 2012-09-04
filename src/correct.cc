@@ -455,15 +455,22 @@ void reflux (cGH const * restrict const cctkGH)
   }
   
   // Obtain atmosphere variable data
-  int const mask_fine_vi = CCTK_VarIndex ("GRHydro::atmosphere_mask");
-  assert (mask_fine_vi >= 0);
-  int const mask_coarse_vi =
-    CCTK_VarIndex ("Refluxing::restricted_atmosphere_mask");
-  assert (mask_coarse_vi >= 0);
-  int const mask_coarse_gi = CCTK_GroupIndexFromVarI (mask_coarse_vi);
-  assert (mask_coarse_gi >= 0);
-  int const mask_coarse_v0 = CCTK_FirstVarIndexI (mask_coarse_gi);
-  assert (mask_coarse_v0 >= 0);
+  bool const need_mask =
+    suppress_refluxing_in_atmosphere or apply_limiter_atmo;
+  
+  int mask_fine_vi = -1;
+  int mask_coarse_vi = -1, mask_coarse_gi = -1, mask_coarse_v0 = -1;
+  
+  if (need_mask) {
+    mask_fine_vi = CCTK_VarIndex ("GRHydro::atmosphere_mask");
+    assert (mask_fine_vi >= 0);
+    mask_coarse_vi = CCTK_VarIndex ("Refluxing::restricted_atmosphere_mask");
+    assert (mask_coarse_vi >= 0);
+    mask_coarse_gi = CCTK_GroupIndexFromVarI (mask_coarse_vi);
+    assert (mask_coarse_gi >= 0);
+    mask_coarse_v0 = CCTK_FirstVarIndexI (mask_coarse_gi);
+    assert (mask_coarse_v0 >= 0);
+  }
   
   
   
@@ -479,19 +486,21 @@ void reflux (cGH const * restrict const cctkGH)
       int const nvars = flux_correction_ptrs.size();
       
       for (int n=0; n<nvars; ++n) {
+        CCTK_REAL *restrict const flux_correction_ptr =
+          flux_correction_ptrs.AT(n);
         assert (dim == 3);
 #pragma omp parallel
         CCTK_LOOP3_ALL(GRHydro_Reflux_correction_coarse_init, cctkGH, i,j,k) {
           int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
           for (int dir=0; dir<3; ++dir) {
-            flux_correction_ptrs.AT(n)[ind+dir*np] = 0.0;
+            flux_correction_ptr[ind+dir*np] = 0.0;
           }
         } CCTK_ENDLOOP3_ALL(GRHydro_Reflux_correction_coarse_init);
       } // for n
       
-      // Initialise the atmosphere mask (in case it will not be set by
-      // the restriction below)
-      {
+      if (need_mask) {
+        // Initialise the atmosphere mask (in case it will not be set
+        // by the restriction below)
         CCTK_REAL *restrict const mask_coarse_ptr =
           (CCTK_REAL *) CCTK_VarDataPtrI (cctkGH, 0, mask_coarse_vi);
         assert (mask_coarse_ptr);
@@ -524,27 +533,32 @@ void reflux (cGH const * restrict const cctkGH)
         nvars = flux_correction_ptrs.size();
                 
         for (int n=0; n<nvars; ++n) {
+          CCTK_REAL *restrict const flux_correction_ptr =
+            flux_correction_ptrs.AT(n);
+          CCTK_REAL const *restrict const flux_register_fine_ptr =
+            flux_register_fine_ptrs.AT(n);
           assert (dim == 3);
+          // TODO: loop only over a region?
 #pragma omp parallel
           CCTK_LOOP3_ALL(GRHydro_Reflux_correction_fine_init, cctkGH, i,j,k) {
             int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
             for (int dir=0; dir<3; ++dir) {
-              flux_correction_ptrs.AT(n)[ind+dir*np] =
-                flux_register_fine_ptrs.AT(n)[ind+dir*np];
-              // assert (not isnan(flux_correction_ptrs.AT(n)[ind+dir*np]));
+              flux_correction_ptr[ind+dir*np] =
+                flux_register_fine_ptr[ind+dir*np];
+              // assert (not isnan(flux_correction_ptr[ind+dir*np]));
             }
           } CCTK_ENDLOOP3_ALL(GRHydro_Reflux_correction_fine_init);
         } // for n
         
-        // Copy the atmosphere mask
-        {
+        if (need_mask) {
+          // Copy the atmosphere mask
           CCTK_INT const *restrict const mask_fine_ptr =
             (CCTK_INT const*) CCTK_VarDataPtrI (cctkGH, 0, mask_fine_vi);
           assert (mask_fine_ptr);
           CCTK_REAL *restrict const mask_coarse_ptr =
             (CCTK_REAL *) CCTK_VarDataPtrI (cctkGH, 0, mask_coarse_vi);
           assert (mask_coarse_ptr);
-          
+          // TODO: loop only over a region?
 #pragma omp parallel
           CCTK_LOOP3_ALL(GRHydro_Reflux_mask_copy, cctkGH, i,j,k) {
             int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
@@ -599,11 +613,13 @@ void reflux (cGH const * restrict const cctkGH)
             }
           }
         }
-        // Atmosphere mask
-        ggf *const gv =
-          arrdata.AT(mask_coarse_gi).AT(m).data.
-          AT(mask_coarse_vi - mask_coarse_v0);
-        gv->ref_restrict_all (state, tl, reflevel, mglevel);
+        if (need_mask) {
+          // Atmosphere mask
+          ggf *const gv =
+            arrdata.AT(mask_coarse_gi).AT(m).data.
+            AT(mask_coarse_vi - mask_coarse_v0);
+          gv->ref_restrict_all (state, tl, reflevel, mglevel);
+        }
       }
     } // for state
   }
@@ -639,12 +655,16 @@ void reflux (cGH const * restrict const cctkGH)
       int const nvars = var_ptrs.size();
       
       // Atmosphere mask
-      CCTK_INT const *restrict const mask_fine_ptr =
-        (CCTK_INT const*) CCTK_VarDataPtrI (cctkGH, 0, mask_fine_vi);
-      assert (mask_fine_ptr);
-      CCTK_REAL const *restrict const mask_coarse_ptr =
-        (CCTK_REAL *) CCTK_VarDataPtrI (cctkGH, 0, mask_coarse_vi);
-      assert (mask_coarse_ptr);
+      CCTK_INT const *restrict mask_fine_ptr = NULL;
+      CCTK_REAL const *restrict mask_coarse_ptr = NULL;
+      if (need_mask) {
+        mask_fine_ptr =
+          (CCTK_INT const*) CCTK_VarDataPtrI (cctkGH, 0, mask_fine_vi);
+        assert (mask_fine_ptr);
+        mask_coarse_ptr =
+          (CCTK_REAL const*) CCTK_VarDataPtrI (cctkGH, 0, mask_coarse_vi);
+        assert (mask_coarse_ptr);
+      }
       
       for (int dir=0; dir<3; ++dir) {
         // Unit vector
@@ -652,10 +672,14 @@ void reflux (cGH const * restrict const cctkGH)
         for (int face=0; face<2; ++face) {
           // Apply the correction to the cell to the left (one index
           // lower) if on the lower face, or the cell to the right
-          // (same index) if on the upper face
+          // (same index) if on the upper face. The remainder of the
+          // correction is applied to the other cell abutting this
+          // face.
           int const idelta = index (lsh, idir);
           int const ioff = (face ? 0 : -1) * idelta;
-          CCTK_REAL const factor = face ? +1 : -1;
+          int const ifactor = face ? +1 : -1;
+          int const ioff_other = ioff - ifactor * idelta;
+          CCTK_REAL const factor = ifactor;
           ibset const coarse_boundary =
             local_box.coarse_boundary[dir][face].shift(idir, 2);
           LOOP_OVER_BSET(cctkGH, coarse_boundary, box, imin, imax) {
@@ -677,16 +701,14 @@ void reflux (cGH const * restrict const cctkGH)
                 int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
                 
                 // Check for atmosphere
-                bool const is_atmosphere =
-                  mask_fine_ptr  [ind-idelta] != 0 or
-                  mask_fine_ptr  [ind       ] != 0 or
-                  mask_coarse_ptr[ind-idelta] != 0.0 or
-                  mask_coarse_ptr[ind       ] != 0.0;
-                
-                CCTK_REAL const limit =
-                  is_atmosphere and apply_limiter_atmo
-                  ? limiter_atmo_factor
-                  : limiter_factor;
+                bool is_atmosphere = false;
+                if (need_mask) {
+                  is_atmosphere =
+                    mask_fine_ptr  [ind-idelta] != 0 or
+                    mask_fine_ptr  [ind       ] != 0 or
+                    mask_coarse_ptr[ind-idelta] != 0.0 or
+                    mask_coarse_ptr[ind       ] != 0.0;
+                }
                 
                 // Calculate flux difference
                 flux_correction_ptrs.AT(n)[ind+dir*np] -=
@@ -699,10 +721,10 @@ void reflux (cGH const * restrict const cctkGH)
                 if (suppress_refluxing_in_atmosphere and is_atmosphere) {
                   difference = 0.0;
                 }
-                if (apply_limiter or (is_atmosphere and apply_limiter_atmo)) {
+                if (apply_limiter or (apply_limiter_atmo and is_atmosphere)) {
                   CCTK_REAL const absval = fabs(var_ptrs.AT(n)[ind+ioff]);
                   CCTK_REAL const limfact =
-                    is_atmosphere and apply_limiter_atmo
+                    apply_limiter_atmo and is_atmosphere
                     ? limiter_atmo_factor
                     : limiter_factor;
                   CCTK_REAL const maxabsdiff = absval * limfact;
@@ -717,11 +739,27 @@ void reflux (cGH const * restrict const cctkGH)
                   // assert (not isnan(correction_total_ptrs.AT(n)[ind+dir*np+ioff]));
                 }
                 
+                // Calculate what part of the difference to apply; the
+                // remainder will be applied to the fine grid instead
+                // TODO: Try different criteria
+                // TODO: Do not use max for the momentum
+                CCTK_REAL correction, remainder;
+                if (not reflux_prolongate) {
+                  correction = difference;
+                  remainder = 0.0;
+                } else {
+                  correction = 0.5 * difference;
+                  remainder = difference - correction;
+                }
+                
+                flux_correction_ptrs.AT(n)[ind+dir*np] =
+                  factor * remainder * delta[dir];
+                
                 // Update the state
                 if (not suppress_refluxing) {
-                  var_ptrs.AT(n)[ind+ioff] += difference;
+                  var_ptrs.AT(n)[ind+ioff] += correction;
+                  var_ptrs.AT(n)[ind+ioff_other] += remainder;
                   // assert (not isnan(var_ptrs.AT(n)[ind+ioff]));
-                  
                 }
                 
               } CCTK_ENDLOOP3(GRHydro_Reflux_correction_calculate);
@@ -733,6 +771,118 @@ void reflux (cGH const * restrict const cctkGH)
       
     } END_LOCAL_COMPONENT_LOOP;
   } END_LOCAL_MAP_LOOP;
+  
+  
+  
+  if (reflux_prolongate) {
+  SWITCH_TO_LEVEL (cctkGH, reflevel+1) {
+    
+    // Prolongate the remainder of the correction back to the fine grid
+    {
+      vector<int> gis, vis;
+      get_varinds (cctkGH, variables::flux_correction, gis, vis);
+      int const nvars = gis.size();
+      int const tl = 0;
+      // Prolongate
+      for (comm_state state; not state.done(); state.step()) {
+        for (int m=0; m<maps; ++m) {
+          // Fluxes
+          for (int n=0; n<nvars; ++n) {
+            for (int dir=0; dir<3; ++dir) {
+              for (int face=0; face<2; ++face) {
+                int const gi = gis.AT(n);
+                int const vi = vis.AT(n) + dir;
+                ggf *const gv = arrdata.AT(gi).AT(m).data.AT(vi);
+                gv->ref_reflux_prolongate_all
+                  (state, tl, reflevel, mglevel, dir, face);
+              }
+            }
+          }
+        }
+      } // for state
+    }
+    
+    
+    
+    // Updated the fine grid state according to the prolongated
+    // remaining correction
+    BEGIN_LOCAL_MAP_LOOP (cctkGH, CCTK_GF) {
+      BEGIN_LOCAL_COMPONENT_LOOP (cctkGH, CCTK_GF) {
+        DECLARE_CCTK_ARGUMENTS;
+        dh const& dd = *vdd.AT(Carpet::map);
+        dh::local_dboxes const& local_box =
+          dd.local_boxes.AT(mglevel).AT(reflevel).AT(local_component);
+        ivect const& lsh = ivect::ref(cctk_lsh);
+        int const np = prod(lsh);
+        
+        rvect const delta (CCTK_DELTA_SPACE(0),
+                           CCTK_DELTA_SPACE(1),
+                           CCTK_DELTA_SPACE(2));
+        
+        // Fluxes etc.
+        vector<CCTK_REAL *> flux_correction_ptrs =
+          get_varptrs (cctkGH, reflevel, variables::flux_correction);
+        vector<CCTK_REAL *> var_ptrs =
+          get_varptrs (cctkGH, reflevel, variables::var);
+        int const nvars = var_ptrs.size();
+        
+        for (int dir=0; dir<3; ++dir) {
+          // Unit vector
+          ivect const idir = ivect::dir(dir);
+          for (int face=0; face<2; ++face) {
+            // Apply the correction to the cell to the left (one index
+            // lower) if on the lower face, or the cell to the right
+            // (same index) if on the upper face. The remainder of the
+            // correction is applied to the other cell abutting this
+            // face.
+            int const idelta = index (lsh, idir);
+            int const ioff = (face ? 0 : -1) * idelta;
+            int const ifactor = face ? +1 : -1;
+            int const ioff_other = ioff - ifactor * idelta;
+            CCTK_REAL const factor = ifactor;
+            ibset const fine_boundary =
+              local_box.fine_boundary[dir][face].shift(idir, 2);
+            LOOP_OVER_BSET(cctkGH, fine_boundary, box, imin, imax) {
+              
+              if (veryverbose) {
+                stringstream buf;
+                buf << "Applying remainder of correction on level " << reflevel << " map " << Carpet::map << " component " << component << " direction " << dir << " face " << face << ": " << imin << ":" << imax-1;
+                CCTK_INFO (buf.str().c_str());
+              }
+              
+              for (int n=0; n<nvars; ++n) {
+                assert (dim == 3);
+#pragma omp parallel
+                CCTK_LOOP3(GRHydro_Reflux_remainder_calculate,
+                           i,j,k,
+                           imin[0],imin[1],imin[2], imax[0],imax[1],imax[2],
+                           cctk_lsh[0],cctk_lsh[1],cctk_lsh[2])
+                {
+                  int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
+                  
+                  // Calculate remaining correction
+                  CCTK_REAL const remainder =
+                    factor *
+                    flux_correction_ptrs.AT(n)[ind+dir*np] / delta[dir];
+                  
+                  // Update the state
+                  if (not suppress_refluxing) {
+                    var_ptrs.AT(n)[ind+ioff_other] += remainder;
+                  }
+                  
+                } CCTK_ENDLOOP3(GRHydro_Reflux_remainder_calculate);
+              }
+              
+            } END_LOOP_OVER_BSET;
+          } // for face
+        } // for dir
+        
+      } END_LOCAL_COMPONENT_LOOP;
+    } END_LOCAL_MAP_LOOP;
+    
+  } END_SWITCH_TO_LEVEL;
+  } // if reflux_prolongate
+  
 }
 
 
@@ -757,11 +907,13 @@ void flux_register_fine_reset (cGH const * restrict const cctkGH)
         
         for (int n=0; n<nvars; ++n) {
           for (int dir=0; dir<3; ++dir) {
+            CCTK_REAL *restrict const flux_register_fine_ptr =
+              flux_register_fine_ptrs.AT(n);
             assert (dim == 3);
 #pragma omp parallel
             CCTK_LOOP3_ALL(GRHydro_Reflux_fine_reset, cctkGH, i,j,k) {
               int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
-              flux_register_fine_ptrs.AT(n)[ind+dir*np] = 0.0;
+              flux_register_fine_ptr[ind+dir*np] = 0.0;
             } CCTK_ENDLOOP3_ALL(GRHydro_Reflux_fine_reset);
           }
         }
@@ -792,11 +944,13 @@ void flux_register_coarse_reset (cGH const * restrict const cctkGH)
       
       for (int n=0; n<nvars; ++n) {
         for (int dir=0; dir<3; ++dir) {
+          CCTK_REAL *restrict const flux_register_coarse_ptr =
+            flux_register_coarse_ptrs.AT(n);
           assert (dim == 3);
 #pragma omp parallel
           CCTK_LOOP3_ALL(GRHydro_Reflux_coarse_reset, cctkGH, i,j,k) {
             int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
-            flux_register_coarse_ptrs.AT(n)[ind+dir*np] = 0.0;
+            flux_register_coarse_ptr[ind+dir*np] = 0.0;
           } CCTK_ENDLOOP3_ALL(GRHydro_Reflux_coarse_reset);
         }
       }
@@ -909,14 +1063,16 @@ void Refluxing_Reset (CCTK_ARGUMENTS)
           int const nvars = flux_correction_total_ptrs.size();
           
           for (int n=0; n<nvars; ++n) {
-            for (int dir=0; dir<3; ++dir) {
-              assert (dim == 3);
+            CCTK_REAL *restrict const flux_correction_total_ptr =
+              flux_correction_total_ptrs.AT(n);
+            assert (dim == 3);
 #pragma omp parallel
-              CCTK_LOOP3_ALL(GRHydro_Reflux_correction_total_reset, cctkGH, i,j,k) {
-                int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
-                flux_correction_total_ptrs.AT(n)[ind+dir*np] = 0.0;
-              } CCTK_ENDLOOP3_ALL(GRHydro_Reflux_correction_total_reset);
-            }
+            CCTK_LOOP3_ALL(GRHydro_Reflux_correction_total_reset, cctkGH, i,j,k) {
+              int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
+              for (int dir=0; dir<3; ++dir) {
+                flux_correction_total_ptr[ind+dir*np] = 0.0;
+              }
+            } CCTK_ENDLOOP3_ALL(GRHydro_Reflux_correction_total_reset);
           }
           
         } END_LOCAL_COMPONENT_LOOP;
@@ -935,14 +1091,16 @@ void Refluxing_Reset (CCTK_ARGUMENTS)
         int const nvars = flux_correction_ptrs.size();
         
         for (int n=0; n<nvars; ++n) {
-          for (int dir=0; dir<3; ++dir) {
-            assert (dim == 3);
+          CCTK_REAL *restrict const flux_correction_ptr =
+            flux_correction_ptrs.AT(n);
+          assert (dim == 3);
 #pragma omp parallel
-            CCTK_LOOP3_ALL(GRHydro_Reflux_correction_reset, cctkGH, i,j,k) {
-              int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
-              flux_correction_ptrs.AT(n)[ind+dir*np] = -1.0;
-            } CCTK_ENDLOOP3_ALL(GRHydro_Reflux_correction_reset);
-          }
+          CCTK_LOOP3_ALL(GRHydro_Reflux_correction_reset, cctkGH, i,j,k) {
+            int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
+            for (int dir=0; dir<3; ++dir) {
+              flux_correction_ptr[ind+dir*np] = -1.0;
+            }
+          } CCTK_ENDLOOP3_ALL(GRHydro_Reflux_correction_reset);
         }
         
       } END_LOCAL_COMPONENT_LOOP;

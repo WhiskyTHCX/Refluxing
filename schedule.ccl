@@ -25,7 +25,9 @@ if (CCTK_Equals(Y_e_evolution_method, "GRHydro")) {
   STORAGE: yeflux_correction
   STORAGE: yeflux_stored
 }
-STORAGE: restricted_atmosphere_mask
+if (suppress_refluxing_in_atmosphere || apply_limiter_atmo) {
+  STORAGE: restricted_atmosphere_mask
+}
 if (CCTK_Equals(Bvec_evolution_method, "GRHydro")) {
   STORAGE: Bconsflux_register_fine[2]
   STORAGE: Bconsflux_register_coarse[2]
