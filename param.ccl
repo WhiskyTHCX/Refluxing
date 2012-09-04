@@ -32,10 +32,6 @@ CCTK_INT Refluxing_MaxNumEvolvedVarsSlow "The maximum number of evolved variable
   48:48 :: "When evolving Bvec"
 } 0
 
-BOOLEAN reflux_prolongate "Prolongate during refluxing to apply part of the correction to the fine grid" STEERABLE=always
-{
-} "no"
-
 BOOLEAN refluxing_debug_variables "Enable storage for refluxing debug variables"
 {
 } "no"
@@ -82,3 +78,9 @@ REAL limiter_atmo_factor "Apply limiter if flux correction is larger than '(fact
 {
   0.0:* :: "Something >= 0"
 } 1.0
+
+
+
+BOOLEAN reflux_prolongate "Prolongate during refluxing to apply part of the correction to the fine grid" STEERABLE=always
+{
+} "no"
