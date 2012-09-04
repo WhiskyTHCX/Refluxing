@@ -84,3 +84,9 @@ REAL limiter_atmo_factor "Apply limiter if flux correction is larger than '(fact
 BOOLEAN reflux_prolongate "Prolongate during refluxing to apply part of the correction to the fine grid" STEERABLE=always
 {
 } "no"
+
+
+
+BOOLEAN soft_refluxing "Apply correction to RHS instead of to state vector" STEERABLE=recover
+{
+} "no"
