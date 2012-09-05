@@ -35,12 +35,12 @@ subroutine Refluxing_Init (CCTK_ARGUMENTS)
   szflux_register_fine   = 0
   tauflux_register_fine  = 0
   if (CCTK_EQUALS(Y_e_evolution_method, "GRHydro")) then
-     yeflux_register_fine  = 0
+     yeflux_register_fine = 0
   end if
   if (CCTK_EQUALS(Bvec_evolution_method, "GRHydro")) then
-    Bconsxflux_register_fine   = 0
-    Bconsyflux_register_fine   = 0
-    Bconszflux_register_fine   = 0
+    Bconsxflux_register_fine = 0
+    Bconsyflux_register_fine = 0
+    Bconszflux_register_fine = 0
   end if
   
   densflux_register_coarse = 0
@@ -49,12 +49,12 @@ subroutine Refluxing_Init (CCTK_ARGUMENTS)
   szflux_register_coarse   = 0
   tauflux_register_coarse  = 0
   if (CCTK_EQUALS(Y_e_evolution_method, "GRHydro")) then
-     yeflux_register_coarse  = 0
+     yeflux_register_coarse = 0
   end if
   if (CCTK_EQUALS(Bvec_evolution_method, "GRHydro")) then
-    Bconsxflux_register_coarse   = 0
-    Bconsyflux_register_coarse   = 0
-    Bconszflux_register_coarse   = 0
+    Bconsxflux_register_coarse = 0
+    Bconsyflux_register_coarse = 0
+    Bconszflux_register_coarse = 0
   end if
   
   if (refluxing_debug_variables /= 0) then
@@ -64,12 +64,28 @@ subroutine Refluxing_Init (CCTK_ARGUMENTS)
      sz_correction_total   = 0
      tau_correction_total  = 0
      if (CCTK_EQUALS(Y_e_evolution_method, "GRHydro")) then
-        ye_correction_total  = 0
+        ye_correction_total = 0
      end if
      if (CCTK_EQUALS(Bvec_evolution_method, "GRHydro")) then
-        Bconsx_correction_total   = 0
-        Bconsy_correction_total   = 0
-        Bconsz_correction_total   = 0
+        Bconsx_correction_total = 0
+        Bconsy_correction_total = 0
+        Bconsz_correction_total = 0
+     end if
+  end if
+  
+  if (delayed_refluxing /= 0) then
+     densflux_delayed_correction = 0
+     sxflux_delayed_correction   = 0
+     syflux_delayed_correction   = 0
+     szflux_delayed_correction   = 0
+     tauflux_delayed_correction  = 0
+     if (CCTK_EQUALS(Y_e_evolution_method, "GRHydro")) then
+        yeflux_delayed_correction = 0
+     end if
+     if (CCTK_EQUALS(Bvec_evolution_method, "GRHydro")) then
+        Bconsxflux_delayed_correction = 0
+        Bconsyflux_delayed_correction = 0
+        Bconszflux_delayed_correction = 0
      end if
   end if
   
@@ -77,32 +93,32 @@ subroutine Refluxing_Init (CCTK_ARGUMENTS)
   ! to NaNChecker, although they are really unused at this point (and
   ! hence also uninitialised).
   
-  densflux_correction = -1
-  sxflux_correction   = -1
-  syflux_correction   = -1
-  szflux_correction   = -1
-  tauflux_correction  = -1
-  if (CCTK_EQUALS(Y_e_evolution_method, "GRHydro")) then
-     yeflux_correction  = -1
-  end if
-  if (CCTK_EQUALS(Bvec_evolution_method, "GRHydro")) then
-    Bconsxflux_correction   = -1
-    Bconsyflux_correction   = -1
-    Bconszflux_correction   = -1
-  end if
-  
   densflux_stored = -1
   sxflux_stored   = -1
   syflux_stored   = -1
   szflux_stored   = -1
   tauflux_stored  = -1
   if (CCTK_EQUALS(Y_e_evolution_method, "GRHydro")) then
-     yeflux_stored  = -1
+     yeflux_stored = -1
   end if
   if (CCTK_EQUALS(Bvec_evolution_method, "GRHydro")) then
-    Bconsxflux_stored   = -1
-    Bconsyflux_stored   = -1
-    Bconszflux_stored   = -1
+    Bconsxflux_stored = -1
+    Bconsyflux_stored = -1
+    Bconszflux_stored = -1
+  end if
+  
+  densflux_correction = -1
+  sxflux_correction   = -1
+  syflux_correction   = -1
+  szflux_correction   = -1
+  tauflux_correction  = -1
+  if (CCTK_EQUALS(Y_e_evolution_method, "GRHydro")) then
+     yeflux_correction = -1
+  end if
+  if (CCTK_EQUALS(Bvec_evolution_method, "GRHydro")) then
+    Bconsxflux_correction = -1
+    Bconsyflux_correction = -1
+    Bconszflux_correction = -1
   end if
   
   if (refluxing_debug_variables /= 0) then

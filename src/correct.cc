@@ -178,6 +178,19 @@ namespace variables {
     NULL
   };
   
+  char const * restrict const flux_delayed_correction[] = {
+    "Refluxing::densflux_delayed_correction[0]",
+    "Refluxing::sxflux_delayed_correction[0]",
+    "Refluxing::syflux_delayed_correction[0]",
+    "Refluxing::szflux_delayed_correction[0]",
+    "Refluxing::tauflux_delayed_correction[0]",
+    "Refluxing::yeflux_delayed_correction[0]",
+    "Refluxing::Bconsxflux_delayed_correction[0]",
+    "Refluxing::Bconsyflux_delayed_correction[0]",
+    "Refluxing::Bconszflux_delayed_correction[0]",
+    NULL
+  };
+  
   char const * restrict const correction_total[] = {
     "Refluxing::dens_correction_total[0]",
     "Refluxing::sx_correction_total[0]",
@@ -652,6 +665,10 @@ void reflux (cGH const * restrict const cctkGH)
                                         variables::none));
       vector<CCTK_REAL *> var_ptrs =
         get_varptrs (cctkGH, reflevel, variables::var);
+      vector<CCTK_REAL *> flux_delayed_correction_ptrs =
+        get_varptrs (cctkGH, reflevel, (delayed_refluxing ?
+                                        variables::flux_delayed_correction :
+                                        variables::none));
       int const nvars = var_ptrs.size();
       
       // Atmosphere mask
@@ -746,19 +763,25 @@ void reflux (cGH const * restrict const cctkGH)
                 CCTK_REAL correction, remainder;
                 if (not reflux_prolongate) {
                   correction = difference;
-                  remainder = 0.0;
                 } else {
                   correction = 0.5 * difference;
                   remainder = difference - correction;
+                  flux_correction_ptrs.AT(n)[ind+dir*np] =
+                    factor * remainder * delta[dir];
                 }
-                
-                flux_correction_ptrs.AT(n)[ind+dir*np] =
-                  factor * remainder * delta[dir];
                 
                 // Update the state
                 if (not suppress_refluxing) {
-                  var_ptrs.AT(n)[ind+ioff] += correction;
-                  var_ptrs.AT(n)[ind+ioff_other] += remainder;
+                  if (not delayed_refluxing) {
+                    var_ptrs.AT(n)[ind+ioff] += correction;
+                    if (reflux_prolongate) {
+                      var_ptrs.AT(n)[ind+ioff_other] += remainder;
+                    }
+                  } else {
+                    assert(not reflux_prolongate); // not implemented
+                    flux_delayed_correction_ptrs.AT(n)[ind+dir*np] +=
+                      factor * correction * delta[dir];
+                  }
                   // assert (not isnan(var_ptrs.AT(n)[ind+ioff]));
                 }
                 

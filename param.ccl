@@ -87,6 +87,11 @@ BOOLEAN reflux_prolongate "Prolongate during refluxing to apply part of the corr
 
 
 
-BOOLEAN soft_refluxing "Apply correction to RHS instead of to state vector" STEERABLE=recover
+BOOLEAN delayed_refluxing "Apply correction to RHS instead of to state vector" STEERABLE=recover
 {
 } "no"
+
+REAL delayed_refluxing_fraction "Fraction of correction that should be applied per time step" STEERABLE=always
+{
+  0.0:* :: "0 disables, large values will be unstable"
+} 1.0
