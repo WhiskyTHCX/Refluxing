@@ -87,7 +87,11 @@ BOOLEAN reflux_prolongate "Prolongate during refluxing to apply part of the corr
 
 
 
-BOOLEAN delayed_refluxing "Apply correction to RHS instead of to state vector" STEERABLE=recover
+BOOLEAN delayed_refluxing "Apply correction to RHS instead of to state vector" STEERABLE=never
+{
+} "no"
+
+BOOLEAN delayed_refluxing_sources "Apply delayed correction to sources instead of fluxes" STEERABLE=never
 {
 } "no"
 

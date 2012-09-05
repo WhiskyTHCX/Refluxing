@@ -80,6 +80,13 @@ SCHEDULE Refluxing_Init AT basegrid
   LANG: Fortran
 } "Initialise refluxing variables"
 
+if (delayed_refluxing && delayed_refluxing_sources) {
+  SCHEDULE Refluxing_DelayedCorrectionReduction AT evol AFTER MoL_Evolution
+  {
+    LANG: Fortran
+  } "Decrease delayed correction amount"
+}
+
 if (delayed_refluxing) {
   SCHEDULE Refluxing_DelayedCorrectionBoundaries AT postregrid
   {

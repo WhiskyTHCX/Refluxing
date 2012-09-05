@@ -42,23 +42,61 @@ subroutine Refluxing_CaptureFluxes (CCTK_ARGUMENTS)
   ! Add delayed correction terms to GRHydro fluxes
   ! (Yes, it is intended that this correction will then later be
   !  captured with the fluxes.)
-  if (delayed_refluxing /= 0) then
-     call correct (densflux, densflux_delayed_correction(:,:,:,flux_direction))
-     call correct (sxflux  , sxflux_delayed_correction  (:,:,:,flux_direction))
-     call correct (syflux  , syflux_delayed_correction  (:,:,:,flux_direction))
-     call correct (szflux  , szflux_delayed_correction  (:,:,:,flux_direction))
-     call correct (tauflux , tauflux_delayed_correction (:,:,:,flux_direction))
-     if (CCTK_EQUALS(Y_e_evolution_method, "GRHydro")) then
-        call correct &
-             (Y_e_con_flux, yeflux_delayed_correction (:,:,:,flux_direction))
-     end if
-     if (CCTK_EQUALS(Bvec_evolution_method, "GRHydro")) then
-        call correct &
-             (Bconsxflux, Bconsxflux_delayed_correction (:,:,:,flux_direction))
-        call correct &
-             (Bconsyflux, Bconsyflux_delayed_correction (:,:,:,flux_direction))
-        call correct &
-             (Bconszflux, Bconszflux_delayed_correction (:,:,:,flux_direction))
+  if (delayed_refluxing/=0) then
+     if (delayed_refluxing_sources==0) then
+        ! Apply delayed correction to fluxes
+        call correct_flux &
+             (densflux, densflux_delayed_correction(:,:,:,flux_direction))
+        call correct_flux &
+             (sxflux, sxflux_delayed_correction(:,:,:,flux_direction))
+        call correct_flux &
+             (syflux, syflux_delayed_correction(:,:,:,flux_direction))
+        call correct_flux &
+             (szflux, szflux_delayed_correction(:,:,:,flux_direction))
+        call correct_flux &
+             (tauflux, tauflux_delayed_correction(:,:,:,flux_direction))
+        if (CCTK_EQUALS(Y_e_evolution_method, "GRHydro")) then
+           call correct_flux &
+                (Y_e_con_flux, yeflux_delayed_correction(:,:,:,flux_direction))
+        end if
+        if (CCTK_EQUALS(Bvec_evolution_method, "GRHydro")) then
+           call correct_flux &
+                (Bconsxflux, &
+                Bconsxflux_delayed_correction(:,:,:,flux_direction))
+           call correct_flux &
+                (Bconsyflux, &
+                Bconsyflux_delayed_correction(:,:,:,flux_direction))
+           call correct_flux &
+                (Bconszflux, &
+                Bconszflux_delayed_correction(:,:,:,flux_direction))
+        end if
+     else
+        ! Apply delayed correction to sources
+        if (flux_direction == 1) then
+           ! The really isn't a direction when correcting the sources
+           call correct_source &
+                (densrhs, densflux_delayed_correction(:,:,:,1))
+           call correct_source &
+                (srhs(:,:,:,1), sxflux_delayed_correction(:,:,:,1))
+           call correct_source &
+                (srhs(:,:,:,2), syflux_delayed_correction(:,:,:,1))
+           call correct_source &
+                (srhs(:,:,:,3), szflux_delayed_correction(:,:,:,1))
+           call correct_source &
+                (taurhs, tauflux_delayed_correction(:,:,:,1))
+           if (CCTK_EQUALS(Y_e_evolution_method, "GRHydro")) then
+              call correct_source &
+                   (Y_e_con_rhs, yeflux_delayed_correction(:,:,:,1))
+           end if
+           if (CCTK_EQUALS(Bvec_evolution_method, "GRHydro")) then
+              call correct_source &
+                   (Bconsrhs(:,:,:,1), Bconsxflux_delayed_correction(:,:,:,1))
+              call correct_source &
+                   (Bconsrhs(:,:,:,2), Bconsyflux_delayed_correction(:,:,:,1))
+              call correct_source &
+                   (Bconsrhs(:,:,:,3), Bconszflux_delayed_correction(:,:,:,1))
+           end if
+        end if
      end if
   end if
   
@@ -79,7 +117,7 @@ subroutine Refluxing_CaptureFluxes (CCTK_ARGUMENTS)
   
 contains
   
-  subroutine correct (grhydro, refluxing)
+  subroutine correct_flux (grhydro, refluxing)
     CCTK_REAL, intent(inout) :: grhydro(:,:,:)
     CCTK_REAL, intent(in)    :: refluxing(:,:,:)
     integer, parameter :: rk = kind(grhydro)
@@ -106,7 +144,28 @@ contains
           end do
        end do
     end do
-  end subroutine correct
+  end subroutine correct_flux
+  
+  subroutine correct_source (grhydro, refluxing)
+    CCTK_REAL, intent(inout) :: grhydro(:,:,:)
+    CCTK_REAL, intent(in)    :: refluxing(:,:,:)
+    CCTK_REAL :: factor
+    integer   :: i,j,k
+    
+    ! Add fraction of Refluxing delayed correction variable to GRHydro
+    ! source variable
+    
+    factor = delayed_refluxing_fraction / CCTK_DELTA_TIME
+    
+    !$omp parallel do private(i,j,k)
+    do k=imin(3),imax(3)
+       do j=imin(2),imax(2)
+          do i=imin(1),imax(1)
+             grhydro(i,j,k) = grhydro(i,j,k) + factor * refluxing(i,j,k)
+          end do
+       end do
+    end do
+  end subroutine correct_source
   
   subroutine capture (refluxing, grhydro)
     CCTK_REAL, intent(out) :: refluxing(:,:,:)
@@ -144,3 +203,54 @@ contains
   end subroutine capture
   
 end subroutine Refluxing_CaptureFluxes
+
+
+
+subroutine Refluxing_DelayedCorrectionReduction (CCTK_ARGUMENTS)
+  implicit none
+  DECLARE_CCTK_ARGUMENTS
+  DECLARE_CCTK_FUNCTIONS
+  DECLARE_CCTK_PARAMETERS
+  
+  integer :: imin(3), imax(3)
+
+  ! Region with valid data
+  imin(:) = 1           + cctk_nghostzones(:)
+  imax(:) = cctk_lsh(:) - cctk_nghostzones(:)
+  
+  ! Reduce the amount of correction required after each time step
+  
+  call reduce_correction (densflux_delayed_correction(:,:,:,1))
+  call reduce_correction (sxflux_delayed_correction(:,:,:,1))
+  call reduce_correction (syflux_delayed_correction(:,:,:,1))
+  call reduce_correction (szflux_delayed_correction(:,:,:,1))
+  call reduce_correction (tauflux_delayed_correction(:,:,:,1))
+  if (CCTK_EQUALS(Y_e_evolution_method, "GRHydro")) then
+     call reduce_correction (yeflux_delayed_correction(:,:,:,1))
+  end if
+  if (CCTK_EQUALS(Bvec_evolution_method, "GRHydro")) then
+     call reduce_correction (Bconsxflux_delayed_correction(:,:,:,1))
+     call reduce_correction (Bconsyflux_delayed_correction(:,:,:,1))
+     call reduce_correction (Bconszflux_delayed_correction(:,:,:,1))
+  end if
+  
+contains
+  
+  subroutine reduce_correction (refluxing)
+    CCTK_REAL, intent(inout) :: refluxing(:,:,:)
+    CCTK_REAL :: factor
+    integer   :: i,j,k
+    
+    factor = 1 - delayed_refluxing_fraction
+    
+    !$omp parallel do private(i,j,k)
+    do k=imin(3),imax(3)
+       do j=imin(2),imax(2)
+          do i=imin(1),imax(1)
+             refluxing(i,j,k) = factor * refluxing(i,j,k)
+          end do
+       end do
+    end do
+  end subroutine reduce_correction
+  
+end subroutine Refluxing_DelayedCorrectionReduction

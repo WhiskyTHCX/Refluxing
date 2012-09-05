@@ -779,8 +779,15 @@ void reflux (cGH const * restrict const cctkGH)
                     }
                   } else {
                     assert(not reflux_prolongate); // not implemented
-                    flux_delayed_correction_ptrs.AT(n)[ind+dir*np] +=
-                      factor * correction * delta[dir];
+                    if (not delayed_refluxing_sources) {
+                      // will update fluxes
+                      flux_delayed_correction_ptrs.AT(n)[ind+dir*np] +=
+                        factor * correction * delta[dir];
+                    } else {
+                      // will update sources
+                      flux_delayed_correction_ptrs.AT(n)[ind+ioff] +=
+                        correction;
+                    }
                   }
                   // assert (not isnan(var_ptrs.AT(n)[ind+ioff]));
                 }
