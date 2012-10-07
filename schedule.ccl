@@ -1,5 +1,10 @@
 # Schedule definitions for thorn Refluxing
 
+if (suppress_refluxing_in_atmosphere)
+{
+   STORAGE: reflux_atmosphere_mask
+}
+
 if (refluxing_debug_variables) {
   STORAGE: restrict_weight_fine
   STORAGE: restrict_weight_coarse
@@ -123,6 +128,21 @@ SCHEDULE Refluxing_Sync IN GRHydroRHS AFTER FluxTerms
   SYNC: yeflux_stored
   SYNC: Bconsflux_stored
 } "Dummy routine for sync"
+
+if (suppress_refluxing_in_atmosphere)
+{
+  # Reset evolved fluxes to atmosphere (in case atmosphere flag is set)
+  SCHEDULE Refluxing_ResetToAtmosphere IN HydroBase_PostStep BEFORE GRHydro_AtmosphereReset AFTER GRHydroPostSyncAtmosphereMask IF GRHydro::InLastMoLPostStep
+  {
+    LANG: Fortran
+  } "Possibly reset evolved fluxes to zero if GRhydro performs atmosphere reset!"
+
+  # Reset evolved fluxes to atmosphere after Con2Prim if rho was reset to atmosphere! 
+  SCHEDULE Refluxing_ResetToAtmosphere IN MoL_PostStep AFTER HydroBase_PostStep IF GRHydro::execute_MoL_PostStep
+  {
+    LANG: Fortran
+  } "Possibly reset evolved fluxes to zero after Con2Prim if GRhydro performs atmosphere reset in Con2Prim!"
+}
 
 # # Synchronise the evolved fluxes
 # SCHEDULE Refluxing_FluxRegisterBoundaries AT postrestrict BEFORE Refluxing_CorrectState

@@ -29,6 +29,11 @@ subroutine Refluxing_Init (CCTK_ARGUMENTS)
   ! registers stored on level L and the fine grid registers stored on
   ! level L+1. The code below may be resetting a level that needs to
   ! be left alone.
+  
+  if (suppress_refluxing_in_atmosphere) then
+     reflux_atmosphere_mask = 0.0d0
+  end if
+  
   densflux_register_fine = 0
   sxflux_register_fine   = 0
   syflux_register_fine   = 0

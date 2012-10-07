@@ -197,6 +197,10 @@ contains
           do i=imin(1),imax(1)
              avg_alp = 0.5_rk * (alp(i,j,k) + alp(i+di,j+dj,k+dk))
              refluxing(i,j,k) = avg_alp * grhydro(i+di,j+dj,k+dk)
+             ! Set captured flux to zero if atmosphere flag has been set!
+             !if (atmosphere_mask(i,j,k) .ne. 0 .or. atmosphere_mask(i+di,j+dj,k+dk) .ne. 0) then
+                !refluxing(i,j,k) = 0.0d0
+             !endif
           end do
        end do
     end do
@@ -254,3 +258,39 @@ contains
   end subroutine reduce_correction
   
 end subroutine Refluxing_DelayedCorrectionReduction
+
+
+
+
+subroutine Refluxing_ResetToAtmosphere (CCTK_ARGUMENTS)
+  implicit none
+  DECLARE_CCTK_ARGUMENTS
+  DECLARE_CCTK_FUNCTIONS
+  DECLARE_CCTK_PARAMETERS
+  
+  integer :: i,j,k
+
+  ! Loop over points and check if any point has been flagged for atmo reset or was reset to atmopshere.
+  ! In that case, we set the reflux_atmosphere_mask
+  !$OMP PARALLEL DO PRIVATE(i,j,k)
+  do k = 1, cctk_lsh(3)
+    do j = 1, cctk_lsh(2)
+      do i = 1, cctk_lsh(1)
+        
+        ! Initialize to zero
+        !reflux_atmosphere_mask(i,j,k) = 0.0d0
+        
+        if ((atmosphere_mask(i,j,k) .ne. 0) .or. (rho(i,j,k) .le. GRHydro_rho_min*(1.0d0+GRHydro_atmo_tolerance))) then
+
+          reflux_atmosphere_mask(i,j,k) = 1.0d0
+        end if
+
+      end do
+    end do
+  end do
+  !$OMP END PARALLEL DO
+
+  
+end subroutine Refluxing_ResetToAtmosphere
+
+

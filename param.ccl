@@ -13,6 +13,7 @@ USES KEYWORD Bvec_evolution_method
 SHARES: GRHydro
 
 USES BOOLEAN use_MoL_slow_multirate_sector
+USES REAL GRHydro_atmo_tolerance
 
 PRIVATE:
 

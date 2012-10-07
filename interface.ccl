@@ -176,5 +176,7 @@ CCTK_REAL Bcons_correction_total[3] TYPE=gf TAGS='Prolongation="none" tensortype
 
 # Atmosphere mask
 
-CCTK_REAL restricted_atmosphere_mask TYPE=gf TAGS='Prolongation="none" tensortypealias="Scalar"' "Copy of the atmosphere mask that can be restricted"
+CCTK_REAL reflux_atmosphere_mask TYPE=gf TAGS='Prolongation="none" tensortypealias="Scalar"' "Copy of the atmosphere mask that can be restricted"
+
+CCTK_REAL restricted_atmosphere_mask TYPE=gf TAGS='Prolongation="restrict" tensortypealias="Scalar"' "Copy of the atmosphere mask that can be restricted"
 # We expect 0 for a normal point, 1 for atmosphere

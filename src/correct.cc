@@ -475,7 +475,7 @@ void reflux (cGH const * restrict const cctkGH)
   int mask_coarse_vi = -1, mask_coarse_gi = -1, mask_coarse_v0 = -1;
   
   if (need_mask) {
-    mask_fine_vi = CCTK_VarIndex ("GRHydro::atmosphere_mask");
+    mask_fine_vi = CCTK_VarIndex ("Refluxing::reflux_atmosphere_mask");
     assert (mask_fine_vi >= 0);
     mask_coarse_vi = CCTK_VarIndex ("Refluxing::restricted_atmosphere_mask");
     assert (mask_coarse_vi >= 0);
@@ -565,8 +565,8 @@ void reflux (cGH const * restrict const cctkGH)
         
         if (need_mask) {
           // Copy the atmosphere mask
-          CCTK_INT const *restrict const mask_fine_ptr =
-            (CCTK_INT const*) CCTK_VarDataPtrI (cctkGH, 0, mask_fine_vi);
+          CCTK_REAL *restrict const mask_fine_ptr =
+            (CCTK_REAL *) CCTK_VarDataPtrI (cctkGH, 0, mask_fine_vi);
           assert (mask_fine_ptr);
           CCTK_REAL *restrict const mask_coarse_ptr =
             (CCTK_REAL *) CCTK_VarDataPtrI (cctkGH, 0, mask_coarse_vi);
@@ -578,6 +578,8 @@ void reflux (cGH const * restrict const cctkGH)
             // Otherwise restricting may cancel atmosphere points:
             assert (mask_fine_ptr[ind] >= 0);
             mask_coarse_ptr[ind] = (CCTK_REAL) mask_fine_ptr[ind];
+            // reset to zero after point has been read out!
+            //mask_fine_ptr[ind] = 0.0;
           } CCTK_ENDLOOP3_ALL(GRHydro_Reflux_mask_copy);
         }
         
@@ -623,6 +625,12 @@ void reflux (cGH const * restrict const cctkGH)
               int const vi = vis.AT(n) + dir;
               ggf *const gv = arrdata.AT(gi).AT(m).data.AT(vi);
               gv->ref_reflux_all (state, tl, reflevel, mglevel, dir, face);
+              if (need_mask) {
+                ggf *const gvA =
+                   arrdata.AT(mask_coarse_gi).AT(m).data.
+                   AT(mask_coarse_vi - mask_coarse_v0);
+                gvA->ref_reflux_all (state, tl, reflevel, mglevel, dir, face);
+              }
             }
           }
         }
@@ -672,11 +680,11 @@ void reflux (cGH const * restrict const cctkGH)
       int const nvars = var_ptrs.size();
       
       // Atmosphere mask
-      CCTK_INT const *restrict mask_fine_ptr = NULL;
-      CCTK_REAL const *restrict mask_coarse_ptr = NULL;
+      CCTK_REAL * restrict mask_fine_ptr = NULL;
+      CCTK_REAL const * restrict mask_coarse_ptr = NULL;
       if (need_mask) {
         mask_fine_ptr =
-          (CCTK_INT const*) CCTK_VarDataPtrI (cctkGH, 0, mask_fine_vi);
+          (CCTK_REAL*) CCTK_VarDataPtrI (cctkGH, 0, mask_fine_vi);
         assert (mask_fine_ptr);
         mask_coarse_ptr =
           (CCTK_REAL const*) CCTK_VarDataPtrI (cctkGH, 0, mask_coarse_vi);
@@ -793,6 +801,20 @@ void reflux (cGH const * restrict const cctkGH)
                 }
                 
               } CCTK_ENDLOOP3(GRHydro_Reflux_correction_calculate);
+              
+              if (need_mask) {
+                CCTK_LOOP3(GRHydro_Reflux_atmosphere_reset,
+                           i,j,k,
+                           imin[0],imin[1],imin[2], imax[0],imax[1],imax[2],
+                           cctk_lsh[0],cctk_lsh[1],cctk_lsh[2])
+                {
+                  int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
+                  // Reset atmosphere flags of reflux_atmopshere_mask on current grid
+                  // (which is misleadingly labeled "mask_fine_ptr")
+                  mask_fine_ptr[ind-idelta] = 0.0;
+                  mask_fine_ptr[ind       ] = 0.0;
+                } CCTK_ENDLOOP3(GRHydro_Reflux_atmosphere_reset);
+              }
             }
             
           } END_LOOP_OVER_BSET;
