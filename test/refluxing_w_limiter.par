@@ -23,7 +23,6 @@ ActiveThorns    =       "time
                          loopcontrol
                          hydrobase
                          ioutil
-                         formaline
                          timerreport
                          nanchecker
                         "
@@ -53,6 +52,7 @@ Refluxing::limiter_factor = 0.9
 # I/O
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+carpetioscalar::outScalar_reductions =  "sum"
 carpetioscalar::outScalar_vars  =       "hydrobase::rho
                                          hydrobase::vel
                                          hydrobase::eps
@@ -75,14 +75,16 @@ IOASCII::out1D_vars             =       "grid::coordinates
                                          grhydro::tau"
 
 IO::out_dir                                  = $parfile
+IO::out_fileinfo                             = "none"                                                                                                                                 
+IO::parfile_write                            = "no"                                                                                                                                   
 io::recover                                  = no
 carpet::enable_all_storage                   = no
 
 carpetioscalar::outScalar_every              =  1
-IOASCII::out1D_every                         =  1
-IOBasic::outInfo_every                       =  1
+IOASCII::out1D_every                         =  -1
+IOBasic::outInfo_every                       =  -1
 
-carpetioascii::out2D_every                   = 128
+carpetioascii::out2D_every                   = -1
 
 iohdf5::out_every                            =  -1
 iohdf5::checkpoint                           = no
