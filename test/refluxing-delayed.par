@@ -200,7 +200,6 @@ grhydro::grhydro_stencil                     = 3
 grhydro::bound                               = "flat"
 
 EOS_Omni::poly_gamma                         = 1.4
-EOS_Omni::poly_gamma_ini                     = 1.4
 EOS_Omni::poly_k                             = 1
 EOS_Omni::gl_gamma                           = 1.4
 
