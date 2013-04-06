@@ -225,7 +225,7 @@ subroutine Refluxing_DelayedCorrectionReduction(CCTK_ARGUMENTS)
   
   ! Reduce the amount of correction required after each time step
   
-  do n=1,nvars
+  do n=0,nvars-1
      call reduce_correction(delayed_correction(:,:,:,3*n+1))
   end do
   
