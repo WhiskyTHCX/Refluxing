@@ -20,31 +20,31 @@ struct args_t {
 
 static
 void
-output (int const vi,
-        char const* const options,
-        void *const args_)
+output(const int vi,
+       const char *const options,
+       void *const args_)
 {
-  args_t& args = * (args_t*) args_;
-  cGH const* const cctkGH = args.cctkGH;
-  char* const fullname = CCTK_FullName(vi);
-  string const alias = string("Refluxing::") + string(fullname);
-  CCTK_OutputVarAs (cctkGH, fullname, alias.c_str());
-  free (fullname);
+  args_t& args = *static_cast<args_t*>(args_);
+  const cGH *const cctkGH = args.cctkGH;
+  char *const fullname = CCTK_FullName(vi);
+  const string alias = string("Refluxing::") + string(fullname);
+  CCTK_OutputVarAs(cctkGH, fullname, alias.c_str());
+  free(fullname);
 }
 
 
 
 extern "C"
-void Refluxing_Output (CCTK_ARGUMENTS)
+void Refluxing_Output(CCTK_ARGUMENTS)
 {
   DECLARE_CCTK_ARGUMENTS;
   DECLARE_CCTK_PARAMETERS;
   
-  assert (is_level_mode());
+  assert(is_level_mode());
   
-  CCTK_INFO ("Outputting refluxing debug variables");
+  CCTK_INFO("Outputting refluxing debug variables");
   
   args_t args;
   args.cctkGH = cctkGH;
-  CCTK_TraverseString (debug_variables, output, &args, CCTK_GROUP_OR_VAR);
+  CCTK_TraverseString(debug_variables, output, &args, CCTK_GROUP_OR_VAR);
 }

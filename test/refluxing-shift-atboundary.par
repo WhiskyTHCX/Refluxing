@@ -22,7 +22,7 @@ ActiveThorns    =       "time
                          constants
                          initbase
                          tmunubase
-                         loopcontrol
+                         loopcontrol CycleClock hwloc
                          hydrobase
                          ioutil
                          periodic

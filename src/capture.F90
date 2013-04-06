@@ -11,7 +11,7 @@ end subroutine Refluxing_Sync
 
 
 
-subroutine Refluxing_CaptureFluxes (CCTK_ARGUMENTS)
+subroutine Refluxing_CaptureFluxes(CCTK_ARGUMENTS)
   implicit none
   DECLARE_CCTK_ARGUMENTS
   DECLARE_CCTK_FUNCTIONS
@@ -46,78 +46,82 @@ subroutine Refluxing_CaptureFluxes (CCTK_ARGUMENTS)
      if (delayed_refluxing_sources==0) then
         ! Apply delayed correction to fluxes
         call correct_flux &
-             (densflux, densflux_delayed_correction(:,:,:,flux_direction))
+             (densflux, delayed_correction(:,:,:,3*index_dens+flux_direction))
         call correct_flux &
-             (sxflux, sxflux_delayed_correction(:,:,:,flux_direction))
+             (sxflux, delayed_correction(:,:,:,3*index_sx+flux_direction))
         call correct_flux &
-             (syflux, syflux_delayed_correction(:,:,:,flux_direction))
+             (syflux, delayed_correction(:,:,:,3*index_sy+flux_direction))
         call correct_flux &
-             (szflux, szflux_delayed_correction(:,:,:,flux_direction))
+             (szflux, delayed_correction(:,:,:,3*index_sz+flux_direction))
         call correct_flux &
-             (tauflux, tauflux_delayed_correction(:,:,:,flux_direction))
+             (tauflux, delayed_correction(:,:,:,3*index_tau+flux_direction))
         if (CCTK_EQUALS(Y_e_evolution_method, "GRHydro")) then
            call correct_flux &
-                (Y_e_con_flux, yeflux_delayed_correction(:,:,:,flux_direction))
+                (Y_e_con_flux, &
+                delayed_correction(:,:,:,3*index_ye+flux_direction))
         end if
         if (CCTK_EQUALS(Bvec_evolution_method, "GRHydro")) then
            call correct_flux &
                 (Bconsxflux, &
-                Bconsxflux_delayed_correction(:,:,:,flux_direction))
+                delayed_correction(:,:,:,3*index_Bconsx+flux_direction))
            call correct_flux &
                 (Bconsyflux, &
-                Bconsyflux_delayed_correction(:,:,:,flux_direction))
+                delayed_correction(:,:,:,3*index_Bconsy+flux_direction))
            call correct_flux &
                 (Bconszflux, &
-                Bconszflux_delayed_correction(:,:,:,flux_direction))
+                delayed_correction(:,:,:,3*index_Bconsz+flux_direction))
         end if
      else
         ! Apply delayed correction to sources
         if (flux_direction == 1) then
            ! The really isn't a direction when correcting the sources
            call correct_source &
-                (densrhs, densflux_delayed_correction(:,:,:,1))
+                (densrhs, delayed_correction(:,:,:,3*index_dens+1))
            call correct_source &
-                (srhs(:,:,:,1), sxflux_delayed_correction(:,:,:,1))
+                (srhs(:,:,:,1), delayed_correction(:,:,:,3*index_sx+1))
            call correct_source &
-                (srhs(:,:,:,2), syflux_delayed_correction(:,:,:,1))
+                (srhs(:,:,:,2), delayed_correction(:,:,:,3*index_sy+1))
            call correct_source &
-                (srhs(:,:,:,3), szflux_delayed_correction(:,:,:,1))
+                (srhs(:,:,:,3), delayed_correction(:,:,:,3*index_sz+1))
            call correct_source &
-                (taurhs, tauflux_delayed_correction(:,:,:,1))
+                (taurhs, delayed_correction(:,:,:,3*index_tau+1))
            if (CCTK_EQUALS(Y_e_evolution_method, "GRHydro")) then
               call correct_source &
-                   (Y_e_con_rhs, yeflux_delayed_correction(:,:,:,1))
+                   (Y_e_con_rhs, delayed_correction(:,:,:,3*index_ye+1))
            end if
            if (CCTK_EQUALS(Bvec_evolution_method, "GRHydro")) then
               call correct_source &
-                   (Bconsrhs(:,:,:,1), Bconsxflux_delayed_correction(:,:,:,1))
+                   (Bconsrhs(:,:,:,1), &
+                   delayed_correction(:,:,:,3*index_Bconsx+1))
               call correct_source &
-                   (Bconsrhs(:,:,:,2), Bconsyflux_delayed_correction(:,:,:,1))
+                   (Bconsrhs(:,:,:,2), &
+                   delayed_correction(:,:,:,3*index_Bconsy+1))
               call correct_source &
-                   (Bconsrhs(:,:,:,3), Bconszflux_delayed_correction(:,:,:,1))
+                   (Bconsrhs(:,:,:,3), &
+                   delayed_correction(:,:,:,3*index_Bconsz+1))
            end if
         end if
      end if
   end if
   
   ! Capture fluxes from GRHydro
-  call capture (densflux_stored(:,:,:,flux_direction), densflux)
-  call capture (sxflux_stored  (:,:,:,flux_direction), sxflux  )
-  call capture (syflux_stored  (:,:,:,flux_direction), syflux  )
-  call capture (szflux_stored  (:,:,:,flux_direction), szflux  )
-  call capture (tauflux_stored (:,:,:,flux_direction), tauflux )
+  call capture(flux(:,:,:,3*index_dens+flux_direction), densflux)
+  call capture(flux(:,:,:,3*index_sx  +flux_direction), sxflux  )
+  call capture(flux(:,:,:,3*index_sy  +flux_direction), syflux  )
+  call capture(flux(:,:,:,3*index_sz  +flux_direction), szflux  )
+  call capture(flux(:,:,:,3*index_tau +flux_direction), tauflux )
   if (CCTK_EQUALS(Y_e_evolution_method, "GRHydro")) then
-     call capture (yeflux_stored (:,:,:,flux_direction), Y_e_con_flux)
+     call capture(flux(:,:,:,3*index_ye+flux_direction), Y_e_con_flux)
   end if
   if (CCTK_EQUALS(Bvec_evolution_method, "GRHydro")) then
-     call capture (Bconsxflux_stored (:,:,:,flux_direction), Bconsxflux)
-     call capture (Bconsyflux_stored (:,:,:,flux_direction), Bconsyflux)
-     call capture (Bconszflux_stored (:,:,:,flux_direction), Bconszflux)
+     call capture(flux(:,:,:,3*index_Bconsx+flux_direction), Bconsxflux)
+     call capture(flux(:,:,:,3*index_Bconsy+flux_direction), Bconsyflux)
+     call capture(flux(:,:,:,3*index_Bconsz+flux_direction), Bconszflux)
   end if
   
 contains
   
-  subroutine correct_flux (grhydro, refluxing)
+  subroutine correct_flux(grhydro, refluxing)
     CCTK_REAL, intent(inout) :: grhydro(:,:,:)
     CCTK_REAL, intent(in)    :: refluxing(:,:,:)
     integer, parameter :: rk = kind(grhydro)
@@ -146,7 +150,7 @@ contains
     end do
   end subroutine correct_flux
   
-  subroutine correct_source (grhydro, refluxing)
+  subroutine correct_source(grhydro, refluxing)
     CCTK_REAL, intent(inout) :: grhydro(:,:,:)
     CCTK_REAL, intent(in)    :: refluxing(:,:,:)
     CCTK_REAL :: factor
@@ -167,7 +171,7 @@ contains
     end do
   end subroutine correct_source
   
-  subroutine capture (refluxing, grhydro)
+  subroutine capture(refluxing, grhydro)
     CCTK_REAL, intent(out) :: refluxing(:,:,:)
     CCTK_REAL, intent(in)  :: grhydro(:,:,:)
     integer, parameter :: rk = kind(refluxing)
@@ -197,10 +201,6 @@ contains
           do i=imin(1),imax(1)
              avg_alp = 0.5_rk * (alp(i,j,k) + alp(i+di,j+dj,k+dk))
              refluxing(i,j,k) = avg_alp * grhydro(i+di,j+dj,k+dk)
-             ! Set captured flux to zero if atmosphere flag has been set!
-             !if (atmosphere_mask(i,j,k) .ne. 0 .or. atmosphere_mask(i+di,j+dj,k+dk) .ne. 0) then
-                !refluxing(i,j,k) = 0.0d0
-             !endif
           end do
        end do
     end do
@@ -210,12 +210,13 @@ end subroutine Refluxing_CaptureFluxes
 
 
 
-subroutine Refluxing_DelayedCorrectionReduction (CCTK_ARGUMENTS)
+subroutine Refluxing_DelayedCorrectionReduction(CCTK_ARGUMENTS)
   implicit none
   DECLARE_CCTK_ARGUMENTS
   DECLARE_CCTK_FUNCTIONS
   DECLARE_CCTK_PARAMETERS
   
+  integer :: n
   integer :: imin(3), imax(3)
 
   ! Region with valid data
@@ -224,23 +225,13 @@ subroutine Refluxing_DelayedCorrectionReduction (CCTK_ARGUMENTS)
   
   ! Reduce the amount of correction required after each time step
   
-  call reduce_correction (densflux_delayed_correction(:,:,:,1))
-  call reduce_correction (sxflux_delayed_correction(:,:,:,1))
-  call reduce_correction (syflux_delayed_correction(:,:,:,1))
-  call reduce_correction (szflux_delayed_correction(:,:,:,1))
-  call reduce_correction (tauflux_delayed_correction(:,:,:,1))
-  if (CCTK_EQUALS(Y_e_evolution_method, "GRHydro")) then
-     call reduce_correction (yeflux_delayed_correction(:,:,:,1))
-  end if
-  if (CCTK_EQUALS(Bvec_evolution_method, "GRHydro")) then
-     call reduce_correction (Bconsxflux_delayed_correction(:,:,:,1))
-     call reduce_correction (Bconsyflux_delayed_correction(:,:,:,1))
-     call reduce_correction (Bconszflux_delayed_correction(:,:,:,1))
-  end if
+  do n=1,nvars
+     call reduce_correction(delayed_correction(:,:,:,3*n+1))
+  end do
   
 contains
   
-  subroutine reduce_correction (refluxing)
+  subroutine reduce_correction(refluxing)
     CCTK_REAL, intent(inout) :: refluxing(:,:,:)
     CCTK_REAL :: factor
     integer   :: i,j,k
@@ -262,35 +253,31 @@ end subroutine Refluxing_DelayedCorrectionReduction
 
 
 
-subroutine Refluxing_ResetToAtmosphere (CCTK_ARGUMENTS)
+subroutine Refluxing_ResetToAtmosphere(CCTK_ARGUMENTS)
   implicit none
   DECLARE_CCTK_ARGUMENTS
   DECLARE_CCTK_FUNCTIONS
   DECLARE_CCTK_PARAMETERS
   
+  CCTK_REAL :: rho_min
   integer :: i,j,k
-
-  ! Loop over points and check if any point has been flagged for atmo reset or was reset to atmopshere.
-  ! In that case, we set the reflux_atmosphere_mask
-  !$OMP PARALLEL DO PRIVATE(i,j,k)
+  
+  rho_min = GRHydro_rho_min*(1.0d0+GRHydro_atmo_tolerance)
+  
+  ! Loop over points and check if any point has been flagged for atmo
+  ! reset or was reset to atmopshere.
+  ! In that case, we set reflux_atmosphere_mask
+  !$omp parallel do private(i,j,k)
   do k = 1, cctk_lsh(3)
-    do j = 1, cctk_lsh(2)
-      do i = 1, cctk_lsh(1)
-        
-        ! Initialize to zero
-        !reflux_atmosphere_mask(i,j,k) = 0.0d0
-        
-        if ((atmosphere_mask(i,j,k) .ne. 0) .or. (rho(i,j,k) .le. GRHydro_rho_min*(1.0d0+GRHydro_atmo_tolerance))) then
-
-          reflux_atmosphere_mask(i,j,k) = 1.0d0
-        end if
-
-      end do
-    end do
+     do j = 1, cctk_lsh(2)
+        do i = 1, cctk_lsh(1)
+           
+           if (atmosphere_mask(i,j,k) /= 0 .or. rho(i,j,k) <= rho_min) then
+              reflux_atmosphere_mask(i,j,k) = 1.0d0
+           end if
+           
+        end do
+     end do
   end do
-  !$OMP END PARALLEL DO
-
   
 end subroutine Refluxing_ResetToAtmosphere
-
-

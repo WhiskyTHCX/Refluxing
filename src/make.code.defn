@@ -1,7 +1,7 @@
 # Main make.code.defn file for thorn Refluxing
 
 # Source files in this directory
-SRCS = boundaries.cc capture.F90 correct.cc init.F90 output.cc paramcheck.cc register.cc
+SRCS = boundaries.cc capture.F90 correct.cc init.F90 output.cc paramcheck.cc variables.cc
 
 # Subdirectories containing source files
 SUBDIRS = 

@@ -2,7 +2,7 @@
 
 if (suppress_refluxing_in_atmosphere)
 {
-   STORAGE: reflux_atmosphere_mask
+  STORAGE: reflux_atmosphere_mask
 }
 
 if (refluxing_debug_variables) {
@@ -12,65 +12,29 @@ if (refluxing_debug_variables) {
   STORAGE: flux_weight_coarse
 }
 
-STORAGE: densflux_register_fine[2]
-STORAGE: densflux_register_coarse[2]
-STORAGE: densflux_stored
-STORAGE: densflux_correction
+STORAGE: flux
+STORAGE: register_fine[2]
+STORAGE: register_coarse[2]
+STORAGE: correction
 if (delayed_refluxing) {
-  STORAGE: densflux_delayed_correction
+  STORAGE: delayed_correction
 }
-STORAGE: sconflux_register_fine[2]
-STORAGE: sconflux_register_coarse[2]
-STORAGE: sconflux_stored
-STORAGE: sconflux_correction
-if (delayed_refluxing) {
-  STORAGE: sconflux_delayed_correction
+
+if (refluxing_debug_variables) {
+  STORAGE: correction_total
 }
-STORAGE: tauflux_register_fine[2]
-STORAGE: tauflux_register_coarse[2]
-STORAGE: tauflux_stored
-STORAGE: tauflux_correction
-if (delayed_refluxing) {
-  STORAGE: tauflux_delayed_correction
-}
-if (CCTK_Equals(Y_e_evolution_method, "GRHydro")) {
-  STORAGE: yeflux_register_fine[2]
-  STORAGE: yeflux_register_coarse[2]
-  STORAGE: yeflux_stored
-  STORAGE: yeflux_correction
-  if (delayed_refluxing) {
-    STORAGE: yeflux_delayed_correction
-  }
-}
-if (CCTK_Equals(Bvec_evolution_method, "GRHydro")) {
-  STORAGE: Bconsflux_register_fine[2]
-  STORAGE: Bconsflux_register_coarse[2]
-  STORAGE: Bconsflux_stored
-  STORAGE: Bconsflux_correction
-  if (delayed_refluxing) {
-    STORAGE: Bconsflux_delayed_correction
-  }
-}
+
+STORAGE: grhydro_indices
+
+
 
 if (suppress_refluxing_in_atmosphere || apply_limiter_atmo) {
   STORAGE: restricted_atmosphere_mask
 }
 
-if (refluxing_debug_variables) {
-  STORAGE: dens_correction_total
-  STORAGE: scon_correction_total
-  STORAGE: tau_correction_total
-  if (CCTK_Equals(Y_e_evolution_method, "GRHydro")) {
-    STORAGE: ye_correction_total
-  }
-  if (CCTK_Equals(Bvec_evolution_method, "GRHydro")) {
-    STORAGE: Bcons_correction_total
-  }
-}
 
 
-
-SCHEDULE Refluxing_Register IN MoL_Register
+SCHEDULE Refluxing_SetupVars IN MoL_Register
 {
   LANG: C
 } "Register evolved variables"
@@ -83,6 +47,12 @@ SCHEDULE Refluxing_ParamCheck AT paramcheck
 SCHEDULE Refluxing_Init AT basegrid
 {
   LANG: Fortran
+} "Initialise refluxing variables"
+
+SCHEDULE Refluxing_Init2 AT basegrid
+{
+  LANG: C
+  OPTIONS: global
 } "Initialise refluxing variables"
 
 if (delayed_refluxing && delayed_refluxing_sources) {
@@ -122,11 +92,7 @@ SCHEDULE Refluxing_CaptureFluxes IN FluxTerms AFTER Riemann BEFORE UpdateCalcul
 SCHEDULE Refluxing_Sync IN GRHydroRHS AFTER FluxTerms 
 {
   LANG: Fortran
-  SYNC: densflux_stored
-  SYNC: sconflux_stored
-  SYNC: tauflux_stored
-  SYNC: yeflux_stored
-  SYNC: Bconsflux_stored
+  SYNC: flux
 } "Dummy routine for sync"
 
 if (suppress_refluxing_in_atmosphere)
@@ -144,22 +110,6 @@ if (suppress_refluxing_in_atmosphere)
   } "Possibly reset evolved fluxes to zero after Con2Prim if GRhydro performs atmosphere reset in Con2Prim!"
 }
 
-# # Synchronise the evolved fluxes
-# SCHEDULE Refluxing_FluxRegisterBoundaries AT postrestrict BEFORE Refluxing_CorrectState
-# {
-#   LANG: C
-#   OPTIONS: level
-#   # We don't need to synchronise the coarse flux registers, since
-#   # their ghost zones will not be used. (Instead, the corrected state
-#   # vector is synchronised.)
-#   #SYNC: densflux_register_coarse
-#   #SYNC: sconflux_register_coarse
-#   #SYNC: tauflux_register_coarse
-#   SYNC: densflux_register_fine
-#   SYNC: sconflux_register_fine
-#   SYNC: tauflux_register_fine
-# } "Apply boundary and symmetry conditions to flux registers"
-
 
 
 # Schedule refluxing before MoL_PostStep, because MoL_PostStep calls
@@ -168,62 +118,27 @@ if (suppress_refluxing_in_atmosphere)
 
 if (refluxing_debug_variables) {
   
-  # this rather ugly hack is here to turn on/off storage for correction
-  # variables based on a parameter without having to use very many nested if
-  # statements. It relies on the (undocumented) fact that everything that is
-  # not a SCHEDULE block is copied verbose into the resulting C code.
-  int Y_e_correction_storage = CCTK_Equals(Y_e_evolution_method, "GRHydro");
-  int Bcons_correction_storage = CCTK_Equals(Bvec_evolution_method, "GRHydro");
   SCHEDULE Refluxing_CorrectState AT postrestrict BEFORE MoL_PostStep
   {
     LANG: C
     OPTIONS: level
-    STORAGE: densflux_correction
-    STORAGE: sconflux_correction
-    STORAGE: tauflux_correction
-    STORAGE: yeflux_correction[Y_e_correction_storage]
-    STORAGE: sconflux_correction
-    STORAGE: Bconsflux_correction[Bcons_correction_storage]
-    SYNC: GRHydro::dens
-    SYNC: GRHydro::scon
-    SYNC: GRHydro::tau
-    SYNC: GRHydro::Y_e_con
-    SYNC: GRHydro::Bcons
+    STORAGE: correction
     
     SYNC: restrict_weight_fine
     SYNC: restrict_weight_coarse
     SYNC: flux_weight_fine
     SYNC: flux_weight_coarse
-    SYNC: densflux_correction
-    SYNC: sconflux_correction
-    SYNC: tauflux_correction
-    SYNC: yeflux_correction
-    SYNC: Bconsflux_correction
-    SYNC: dens_correction_total
-    SYNC: scon_correction_total
-    SYNC: tau_correction_total
-    SYNC: ye_correction_total
-    SYNC: Bcons_correction_total
+    SYNC: correction
+    SYNC: correction_total
   } "Correct coarse grid state"
   
 } else {
   
-  int Y_e_correction_storage = CCTK_Equals(Y_e_evolution_method, "GRHydro");
-  int Bcons_correction_storage = CCTK_Equals(Bvec_evolution_method, "GRHydro");
   SCHEDULE Refluxing_CorrectState AT postrestrict BEFORE MoL_PostStep
   {
     LANG: C
     OPTIONS: level
-    STORAGE: densflux_correction
-    STORAGE: sconflux_correction
-    STORAGE: tauflux_correction
-    STORAGE: yeflux_correction[Y_e_correction_storage]
-    STORAGE: Bconsflux_correction[Bcons_correction_storage]
-    SYNC: GRHydro::dens
-    SYNC: GRHydro::scon
-    SYNC: GRHydro::tau
-    SYNC: GRHydro::Y_e_con
-    SYNC: GRHydro::Bcons
+    STORAGE: correction
   } "Correct coarse grid state"
-    
+  
 }

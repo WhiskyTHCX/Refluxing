@@ -15,23 +15,38 @@ SHARES: GRHydro
 USES BOOLEAN use_MoL_slow_multirate_sector
 USES REAL GRHydro_atmo_tolerance
 
+
+
 PRIVATE:
+
+STRING refluxing_variables "List of variables and groups which should be refluxed" STEERABLE=recover
+{
+  .* :: "list of variables names in CCTK_TraverseString syntax; each variable may have as option the name of a string or keyword parameter disabling this variable if set to 'none'"
+} "GRHydro::dens GRHydro::scon GRHydro::tau GRHydro::Y_e_con{HydroBase::Y_e_evolution_method} GRHydro::Bcons{HydroBase::Bvec_evolution_method}"
+
+CCTK_INT nvars "Number of variables to which refluxing is applied" STEERABLE=recover
+{
+  0:* :: ""
+} 5
+
+CCTK_INT nvars_evolved "Number of variables which should be evolved via MoL" STEERABLE=recover
+{
+  0:* :: ""
+} 5
+
+
 
 CCTK_INT Refluxing_MaxNumEvolvedVars "The maximum number of evolved variables used by Refluxing" ACCUMULATOR-BASE=MethodofLines::MoL_Num_Evolved_Vars STEERABLE=RECOVER
 {
-  0:0   :: ""
-  30:30 :: "refluxing adds 30 (2 * NDIRS * NSTATEVARS) evolved variables"
-  36:36 :: "When evolving Y_e"
-  48:48 :: "When evolving Bvec"
+  0:* :: "must be 6*nvars_evolved"
 } 30
 
 CCTK_INT Refluxing_MaxNumEvolvedVarsSlow "The maximum number of evolved variables used by Refluxing" ACCUMULATOR-BASE=MethodofLines::MoL_Num_Evolved_Vars_Slow STEERABLE=RECOVER
 {
-  0:0   :: ""
-  30:30 :: "refluxing adds 30 (2 * NDIRS * NSTATEVARS) evolved variables"
-  36:36 :: "When evolving Y_e"
-  48:48 :: "When evolving Bvec"
+  0:* :: ""
 } 0
+
+
 
 BOOLEAN refluxing_debug_variables "Enable storage for refluxing debug variables"
 {

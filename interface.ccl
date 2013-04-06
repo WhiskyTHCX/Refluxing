@@ -17,16 +17,16 @@ USES INCLUDE HEADER: carpet.hh
 
 # Register evolved variables
 CCTK_INT FUNCTION                  \
-    MoLRegisterEvolvedGroup        \
+    MoLRegisterEvolved             \
         (CCTK_INT IN EvolvedIndex, \
          CCTK_INT IN RHSIndex)
-REQUIRES FUNCTION MoLRegisterEvolvedGroup
+REQUIRES FUNCTION MoLRegisterEvolved
 
 CCTK_INT FUNCTION                  \
-    MoLRegisterEvolvedGroupSlow    \
+    MoLRegisterEvolvedSlow         \
         (CCTK_INT IN EvolvedIndex, \
          CCTK_INT IN RHSIndex)
-USES FUNCTION MoLRegisterEvolvedGroupSlow
+USES FUNCTION MoLRegisterEvolvedSlow
 
 # Get pointer to grid variable for a specific map and refinement level
 CCTK_POINTER FUNCTION                     \
@@ -44,6 +44,13 @@ CCTK_INT FUNCTION                         \
     GetRegriddingEpoch                    \
         (CCTK_POINTER_TO_CONST IN cctkGH)
 REQUIRES FUNCTION GetRegriddingEpoch
+
+CCTK_INT FUNCTION                         \
+    GetRegriddingEpochs                   \
+        (CCTK_POINTER_TO_CONST IN cctkGH, \
+         CCTK_INT IN size,                \
+         CCTK_INT ARRAY OUT epochs)
+REQUIRES FUNCTION GetRegriddingEpochs
 
 CCTK_INT FUNCTION                         \
     GetRefinementLevel                    \
@@ -88,7 +95,7 @@ CCTK_REAL flux_weight_coarse[3] TYPE=gf TAGS='Prolongation="none" Checkpoint="no
 # All these variables exist for all conserved quantites
 
 # There are:
-#   5 conserved quantities
+#   (nvars) conserved quantities
 #   3 directions
 #   fluxes, coarse and fine registers with 2 time levels each
 #      make altogether for 5 * 3 * (1 + 2 + 2) = 75 additional time levels
@@ -96,81 +103,28 @@ CCTK_REAL flux_weight_coarse[3] TYPE=gf TAGS='Prolongation="none" Checkpoint="no
 #      this could be optimised since these need only be stored
 #      on the refinement boundaries, not in the whole volume
 
-# Density
-CCTK_REAL densflux_register_fine[3] TYPE=gf TIMELEVELS=2 TAGS='Prolongation="none" tensortypealias="D" tensorweight=+1.0' "Register for fine grid density flux"
-CCTK_REAL densflux_register_coarse[3] TYPE=gf TIMELEVELS=2 TAGS='Prolongation="none" tensortypealias="D" tensorweight=+1.0' "Register for coarse grid density flux"
-CCTK_REAL densflux_stored[3] TYPE=gf TAGS='Prolongation="none" Checkpoint="no" tensortypealias="D" tensorweight=+1.0' "Density flux"
-CCTK_REAL densflux_correction[3] TYPE=gf TAGS='Prolongation="restrict" Checkpoint="no" tensortypealias="D" tensorweight=+1.0' "Correction for density flux"
-CCTK_REAL densflux_delayed_correction[3] TYPE=gf TAGS='Prolongation="none" tensortypealias="D" tensorweight=+1.0' "Delayed correction for density flux"
-CCTK_REAL dens_correction_total[3] TYPE=gf TAGS='Prolongation="none" tensortypealias="D" tensorweight=+1.0' "Accumulated correction for density flux"
+CCTK_REAL flux[3*nvars] TYPE=gf TAGS='Prolongation="none" Checkpoint="no" tensortypealias="D" tensorweight=+1.0' "Captured fluxes"
 
-# Momenta
-CCTK_REAL sconflux_register_fine[3] TYPE=gf TIMELEVELS=2 TAGS='Prolongation="none" tensortypealias="DD" tensorweight=+1.0'
-{
-  sxflux_register_fine syflux_register_fine szflux_register_fine
-} "Register for fine grid momentum flux"
-CCTK_REAL sconflux_register_coarse[3] TYPE=gf TIMELEVELS=2 TAGS='Prolongation="none" tensortypealias="DD" tensorweight=+1.0'
-{
-  sxflux_register_coarse syflux_register_coarse szflux_register_coarse
-} "Register for coarse grid momentum flux"
-CCTK_REAL sconflux_stored[3] TYPE=gf TAGS='Prolongation="none" Checkpoint="no" tensortypealias="DD" tensorweight=+1.0'
-{
-  sxflux_stored syflux_stored szflux_stored
-} "Momentum flux"
-CCTK_REAL sconflux_correction[3] TYPE=gf TAGS='Prolongation="restrict" Checkpoint="no" tensortypealias="DD" tensorweight=+1.0'
-{
-  sxflux_correction syflux_correction szflux_correction
-} "Correction for momentum flux"
-CCTK_REAL sconflux_delayed_correction[3] TYPE=gf TAGS='Prolongation="none" tensortypealias="DD" tensorweight=+1.0'
-{
-  sxflux_delayed_correction syflux_delayed_correction szflux_delayed_correction
-} "Delayed correction for momentum flux"
-CCTK_REAL scon_correction_total[3] TYPE=gf TAGS='Prolongation="none" tensortypealias="D" tensorweight=+1.0'
-{
-  sx_correction_total sy_correction_total sz_correction_total
-} "Accumulated correction for momentum flux"
+CCTK_REAL register_fine[3*nvars] TYPE=gf TIMELEVELS=2 TAGS='Prolongation="none" tensortypealias="D" tensorweight=+1.0' "Registers for fine grid fluxes"
 
-# Energy
-CCTK_REAL tauflux_register_fine[3] TYPE=gf TIMELEVELS=2 TAGS='Prolongation="none" tensortypealias="D" tensorweight=+1.0' "Register for fine grid energy flux"
-CCTK_REAL tauflux_register_coarse[3] TYPE=gf TIMELEVELS=2 TAGS='Prolongation="none" tensortypealias="D" tensorweight=+1.0' "Register for coarse grid energy flux"
-CCTK_REAL tauflux_stored[3] TYPE=gf TAGS='Prolongation="none" Checkpoint="no" tensortypealias="D" tensorweight=+1.0' "Energy flux"
-CCTK_REAL tauflux_correction[3] TYPE=gf TAGS='Prolongation="restrict" Checkpoint="no" tensortypealias="D" tensorweight=+1.0' "Correction for energy flux"
-CCTK_REAL tauflux_delayed_correction[3] TYPE=gf TAGS='Prolongation="none" tensortypealias="D" tensorweight=+1.0' "Delayed correction for energy flux"
-CCTK_REAL tau_correction_total[3] TYPE=gf TAGS='Prolongation="none" tensortypealias="D" tensorweight=+1.0' "Accumulated correction for energy flux"
+CCTK_REAL register_coarse[3*nvars] TYPE=gf TIMELEVELS=2 TAGS='Prolongation="none" tensortypealias="D" tensorweight=+1.0' "Registers for coarse grid fluxes"
 
-# Electron fraction
-CCTK_REAL yeflux_register_fine[3] TYPE=gf TIMELEVELS=2 TAGS='Prolongation="none" tensortypealias="D" tensorweight=+1.0' "Register for fine grid electron fraction flux"
-CCTK_REAL yeflux_register_coarse[3] TYPE=gf TIMELEVELS=2 TAGS='Prolongation="none" tensortypealias="D" tensorweight=+1.0' "Register for coarse grid electron fraction flux"
-CCTK_REAL yeflux_stored[3] TYPE=gf TAGS='Prolongation="none" Checkpoint="no" tensortypealias="D" tensorweight=+1.0' "Electron fraction flux"
-CCTK_REAL yeflux_correction[3] TYPE=gf TAGS='Prolongation="restrict" Checkpoint="no" tensortypealias="D" tensorweight=+1.0' "Correction for electron fraction flux"
-CCTK_REAL yeflux_delayed_correction[3] TYPE=gf TAGS='Prolongation="none" tensortypealias="D" tensorweight=+1.0' "Delayed correction for electron fraction flux"
-CCTK_REAL ye_correction_total[3] TYPE=gf TAGS='Prolongation="none" tensortypealias="D" tensorweight=+1.0' "Accumulated correction for electron fraction flux"
+CCTK_REAL correction[3*nvars] TYPE=gf TAGS='Prolongation="restrict" Checkpoint="no" tensortypealias="D" tensorweight=+1.0' "Corrections"
 
-# Magnetic field
-CCTK_REAL Bconsflux_register_fine[3] TYPE=gf TIMELEVELS=2 TAGS='Prolongation="none" tensortypealias="UU" tensorweight=+1.0'
+CCTK_REAL delayed_correction[3*nvars] TYPE=gf TAGS='Prolongation="none" tensortypealias="D" tensorweight=+1.0' "Delayed corrections"
+
+CCTK_REAL correction_total[3*nvars] TYPE=gf TAGS='Prolongation="none" tensortypealias="D" tensorweight=+1.0' "Accumulated corrections (for statistics only)"
+
+
+
+CCTK_INT grhydro_indices TYPE=scalar
 {
-  Bconsxflux_register_fine Bconsyflux_register_fine Bconszflux_register_fine
-} "Register for fine grid magnetic field flux"
-CCTK_REAL Bconsflux_register_coarse[3] TYPE=gf TIMELEVELS=2 TAGS='Prolongation="none" tensortypealias="UU" tensorweight=+1.0'
-{
-  Bconsxflux_register_coarse Bconsyflux_register_coarse Bconszflux_register_coarse
-} "Register for coarse grid magnetic field flux"
-CCTK_REAL Bconsflux_stored[3] TYPE=gf TAGS='Prolongation="none" Checkpoint="no" tensortypealias="UU" tensorweight=+1.0'
-{
-  Bconsxflux_stored Bconsyflux_stored Bconszflux_stored
-} "magnetic field flux"
-CCTK_REAL Bconsflux_correction[3] TYPE=gf TAGS='Prolongation="restrict" Checkpoint="no" tensortypealias="UU" tensorweight=+1.0'
-{
-  Bconsxflux_correction Bconsyflux_correction Bconszflux_correction
-} "Correction for magnetic field flux"
-CCTK_REAL Bconsflux_delayed_correction[3] TYPE=gf TAGS='Prolongation="none" tensortypealias="UU" tensorweight=+1.0'
-{
-  Bconsxflux_delayed_correction Bconsyflux_delayed_correction Bconszflux_delayed_correction
-} "Delayed correction for magnetic field flux"
-CCTK_REAL Bcons_correction_total[3] TYPE=gf TAGS='Prolongation="none" tensortypealias="D" tensorweight=+1.0'
-{
-  Bconsx_correction_total Bconsy_correction_total Bconsz_correction_total
-} "Accumulated correction for magnetic field flux"
+  index_dens
+  index_sx index_sy index_sz
+  index_tau
+  index_ye
+  index_Bconsx index_Bconsy index_Bconsz
+} "Indices for GRHydro variables; use e.g. as flux[3*index_dens+1] for y-flux for denxity"
 
 
 
