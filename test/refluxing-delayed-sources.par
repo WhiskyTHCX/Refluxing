@@ -70,24 +70,12 @@ IOASCII::out1D_vars             =       "grid::coordinates
                                          grhydro::taurhs
                                          refluxing::flux_weight_fine
                                          refluxing::flux_weight_coarse
-                                         refluxing::densflux_register_fine
-                                         refluxing::densflux_register_coarse
-                                         refluxing::densflux_stored
-                                         refluxing::densflux_correction
-                                         refluxing::densflux_delayed_correction
-                                         refluxing::dens_correction_total
-                                         refluxing::sconflux_register_fine
-                                         refluxing::sconflux_register_coarse
-                                         refluxing::sconflux_stored
-                                         refluxing::sconflux_correction
-                                         refluxing::sconflux_delayed_correction
-                                         refluxing::scon_correction_total
-                                         refluxing::tauflux_register_fine
-                                         refluxing::tauflux_register_coarse
-                                         refluxing::tauflux_stored
-                                         refluxing::tauflux_correction
-                                         refluxing::tauflux_delayed_correction
-                                         refluxing::tau_correction_total"
+                                         refluxing::register_fine
+                                         refluxing::register_coarse
+                                         refluxing::flux
+                                         refluxing::correction
+                                         refluxing::delayed_correction
+                                         refluxing::correction_total"
 
 IO::out_dir                                  = $parfile
 IO::out_fileinfo                             = "none"
