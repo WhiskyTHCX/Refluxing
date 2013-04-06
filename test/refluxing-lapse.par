@@ -231,4 +231,4 @@ admbase::metric_timelevels                   =  3
 admbase::lapse_timelevels                    =  3
 admbase::shift_timelevels                    =  3
 
-Minkowski::lapsefactor                       =  0.5
+Minkowski::lapsefactor                       =  2.0 # 0.5
