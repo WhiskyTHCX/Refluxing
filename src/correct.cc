@@ -551,7 +551,7 @@ void reflux(const cGH *restrict const cctkGH)
   
   
   if (reflux_prolongate) {
-    __builtin_unreachable();
+    CCTK_BUILTIN_UNREACHABLE();
 #if 0
 #  error "TODO: MODERNIZE THIS SECTION"
     SWITCH_TO_LEVEL(cctkGH, reflevel+1) {
