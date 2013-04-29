@@ -5,6 +5,7 @@
 #include <cassert>
 #include <cmath>
 #include <cstdlib>
+#include <cstring>
 #include <iomanip>
 #include <iostream>
 #include <sstream>
@@ -13,6 +14,7 @@
 #include <loopcontrol.h>
 
 #include <carpet.hh>
+#include <defs.hh>
 #include <dh.hh>
 #include <gh.hh>
 #include <vect.hh>
@@ -674,6 +676,9 @@ void poison_state_boundary(const cGH* restrict const cctkGH)
 {
   DECLARE_CCTK_PARAMETERS;
   
+  CCTK_REAL poison;
+  memset(&poison, get_poison_value(), sizeof poison);
+  
   BEGIN_LOCAL_MAP_LOOP(cctkGH, CCTK_GF) {
     BEGIN_LOCAL_COMPONENT_LOOP(cctkGH, CCTK_GF) {
       DECLARE_CCTK_ARGUMENTS;
@@ -705,7 +710,7 @@ void poison_state_boundary(const cGH* restrict const cctkGH)
                          cctk_ash[0], cctk_ash[1], cctk_ash[2])
               {
                 const int ind3d = CCTK_GFINDEX3D(cctkGH, i,j,k);
-                ptr[ind3d] = 0.0;
+                ptr[ind3d] = poison;
               } CCTK_ENDLOOP3(poison_state_boundary);
               
             } // if !bbox

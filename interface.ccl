@@ -6,6 +6,7 @@ INHERITS: GRHydro
 
 USES INCLUDE HEADER: loopcontrol.h
 
+USES INCLUDE HEADER: defs.hh
 USES INCLUDE HEADER: dh.hh
 USES INCLUDE HEADER: gh.hh
 USES INCLUDE HEADER: operator_prototypes_3d.hh
