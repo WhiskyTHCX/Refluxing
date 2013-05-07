@@ -55,6 +55,12 @@ SCHEDULE Refluxing_Init2 AT basegrid
   OPTIONS: global
 } "Initialise refluxing variables"
 
+SCHEDULE Refluxing_Init2 AT POST_RECOVER_VARIABLES
+{
+  LANG: C
+  OPTIONS: global
+} "Initialise refluxing variables after recovering grid structure from checkpoint"
+
 if (delayed_refluxing && delayed_refluxing_sources) {
   SCHEDULE Refluxing_DelayedCorrectionReduction AT evol AFTER MoL_Evolution
   {
