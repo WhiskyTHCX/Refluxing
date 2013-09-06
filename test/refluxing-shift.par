@@ -52,10 +52,6 @@ ActiveThorns     =      "carpetiobasic
 carpetioscalar::outScalar_vars  =       "admbase::gxx
                                          admbase::alp
                                          admbase::betax
-                                         hydrobase::rho
-                                         hydrobase::vel
-                                         hydrobase::eps
-                                         hydrobase::press
                                          grhydro::dens
                                          grhydro::scon
                                          grhydro::tau"

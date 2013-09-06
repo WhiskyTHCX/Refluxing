@@ -52,10 +52,6 @@ ActiveThorns     =      "carpetiobasic
 carpetioscalar::outScalar_vars  =       "admbase::gxx
                                          admbase::alp
                                          admbase::betax
-                                         hydrobase::rho
-                                         hydrobase::vel
-                                         hydrobase::eps
-                                         hydrobase::press
                                          grhydro::dens
                                          grhydro::scon
                                          grhydro::tau"
@@ -90,7 +86,7 @@ IO::out_dir                                  = $parfile
 IO::out_fileinfo                             = "none"
 IO::parfile_write                            = "no"
 
-carpetioscalar::outScalar_every              =  1
+carpetioscalar::outScalar_every              =  2
 carpetioscalar::outScalar_reductions         = "sum"
 IOASCII::out1D_every                         =  0
 IOBasic::outInfo_every                       =  1

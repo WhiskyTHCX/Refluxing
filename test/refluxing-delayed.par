@@ -45,11 +45,7 @@ ActiveThorns     =      "carpetiobasic
 # I/O
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-carpetioscalar::outScalar_vars  =       "hydrobase::rho
-                                         hydrobase::vel
-                                         hydrobase::eps
-                                         hydrobase::press
-                                         grhydro::dens
+carpetioscalar::outScalar_vars  =       "grhydro::dens
                                          grhydro::scon
                                          grhydro::tau"
 
