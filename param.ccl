@@ -29,16 +29,11 @@ CCTK_INT nvars "Number of variables to which refluxing is applied" STEERABLE=rec
   0:* :: ""
 } 5
 
-CCTK_INT nvars_evolved "Number of variables which should be evolved via MoL" STEERABLE=recover
-{
-  0:* :: ""
-} 5
-
 
 
 CCTK_INT Refluxing_MaxNumEvolvedVars "The maximum number of evolved variables used by Refluxing" ACCUMULATOR-BASE=MethodofLines::MoL_Num_Evolved_Vars STEERABLE=RECOVER
 {
-  0:* :: "must be 6*nvars_evolved"
+  0:* :: "must be 6 times the number of refluxed variables evolved with MoL"
 } 30
 
 CCTK_INT Refluxing_MaxNumEvolvedVarsSlow "The maximum number of evolved variables used by Refluxing" ACCUMULATOR-BASE=MethodofLines::MoL_Num_Evolved_Vars_Slow STEERABLE=RECOVER

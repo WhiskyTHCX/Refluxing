@@ -124,7 +124,6 @@ namespace Refluxing {
     }
     
     // Register these variables with MoL
-    assert(nvars_evolved <= int(refluxing_vars.size()));
     const int vi_register_fine =
       CCTK_VarIndex("Refluxing::register_fine[0]");
     assert(vi_register_fine >= 0);
@@ -134,10 +133,14 @@ namespace Refluxing {
     const int vi_flux =
       CCTK_VarIndex("Refluxing::flux[0]");
     assert(vi_flux >= 0);
-    for (int n=0; n<nvars_evolved; ++n) {
-      for (int d=0; d<3; ++d) {
-        register_evolved(vi_register_fine+3*n+d, vi_flux+3*n+d);
-        register_evolved(vi_register_coarse+3*n+d, vi_flux+3*n+d);
+    for (int n=0; n<nvars; ++n) {
+      // some time updates are handled by thorns other than MoL. Only register
+      // those fluxes with MoL whose variable is evolved by MoL.
+      if (MoLQueryEvolvedRHS(refluxing_vars.AT(n)) >= 0) {
+        for (int d=0; d<3; ++d) {
+          register_evolved(vi_register_fine+3*n+d, vi_flux+3*n+d);
+          register_evolved(vi_register_coarse+3*n+d, vi_flux+3*n+d);
+        }
       }
     }
   }

@@ -33,8 +33,9 @@ if (suppress_refluxing_in_atmosphere || apply_limiter_atmo) {
 }
 
 
-
-SCHEDULE Refluxing_SetupVars IN MoL_Register
+# must be scheduled after all of the refluxed variables that will be evolved
+# with MoL are registered with MoL
+SCHEDULE Refluxing_SetupVars IN MoL_Register AFTER GRHydro_Register
 {
   LANG: C
 } "Register evolved variables"
