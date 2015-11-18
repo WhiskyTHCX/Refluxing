@@ -9,7 +9,7 @@ void Refluxing_ParamCheck (CCTK_ARGUMENTS)
 {
   DECLARE_CCTK_ARGUMENTS;
   DECLARE_CCTK_PARAMETERS;
-  
+
   if (CCTK_IsThornActive ("CarpetRegrid2")) {
     CCTK_INT const snap_to_coarse =
       * static_cast<CCTK_INT const *>

@@ -1,10 +1,5 @@
 # Schedule definitions for thorn Refluxing
 
-if (suppress_refluxing_in_atmosphere)
-{
-  STORAGE: reflux_atmosphere_mask
-}
-
 if (refluxing_debug_variables) {
   STORAGE: restrict_weight_fine
   STORAGE: restrict_weight_coarse
@@ -16,29 +11,10 @@ STORAGE: flux
 STORAGE: register_fine[2]
 STORAGE: register_coarse[2]
 STORAGE: correction
-if (delayed_refluxing) {
-  STORAGE: delayed_correction
-}
 
 if (refluxing_debug_variables) {
   STORAGE: correction_total
 }
-
-STORAGE: grhydro_indices
-
-
-
-if (suppress_refluxing_in_atmosphere || apply_limiter_atmo) {
-  STORAGE: restricted_atmosphere_mask
-}
-
-
-# must be scheduled after all of the refluxed variables that will be evolved
-# with MoL are registered with MoL
-SCHEDULE Refluxing_SetupVars IN MoL_Register AFTER GRHydro_Register
-{
-  LANG: C
-} "Register evolved variables"
 
 SCHEDULE Refluxing_ParamCheck AT paramcheck
 {
@@ -54,27 +30,13 @@ SCHEDULE Refluxing_Init2 AT basegrid
 {
   LANG: C
   OPTIONS: global
-} "Initialise refluxing variables"
+} "Initialise internal refluxing variables"
 
 SCHEDULE Refluxing_Init2 AT POST_RECOVER_VARIABLES
 {
   LANG: C
   OPTIONS: global
-} "Initialise refluxing variables after recovering grid structure from checkpoint"
-
-if (delayed_refluxing && delayed_refluxing_sources) {
-  SCHEDULE Refluxing_DelayedCorrectionReduction AT evol AFTER MoL_Evolution
-  {
-    LANG: Fortran
-  } "Decrease delayed correction amount"
-}
-
-if (delayed_refluxing) {
-  SCHEDULE Refluxing_DelayedCorrectionBoundaries AT postregrid
-  {
-    LANG: C
-  } "Set boundaries of delayed correction to zero"
-}
+} "Initialise internal refluxing variables after recovering grid structure from checkpoint"
 
 SCHEDULE Refluxing_Reset AT postregrid
 {
@@ -88,49 +50,23 @@ SCHEDULE Refluxing_Output AT postregrid AFTER Refluxing_Reset
   OPTIONS: level
 } "Output debug variables"
 
-
-# Capture the fluxes inside GRHydro's RHS calculation
-SCHEDULE Refluxing_CaptureFluxes IN FluxTerms AFTER Riemann BEFORE UpdateCalcul
+# The user should schedule the group RefluxingSyncGroup when the fluxes need to be syncronized
+SCHEDULE Refluxing_Sync IN RefluxingSyncGroup
 {
-  LANG: Fortran
-} "Possibly modify, then capture and store the flux terms"
-
-# Sychronize the captured fluxes
-SCHEDULE Refluxing_Sync IN GRHydroRHS AFTER FluxTerms 
-{
-  LANG: Fortran
+  LANG: C
   SYNC: flux
 } "Dummy routine for sync"
-
-if (suppress_refluxing_in_atmosphere)
-{
-  # Reset evolved fluxes to atmosphere (in case atmosphere flag is set)
-  SCHEDULE Refluxing_ResetToAtmosphere IN HydroBase_PostStep BEFORE GRHydro_AtmosphereReset AFTER GRHydroPostSyncAtmosphereMask IF GRHydro::InLastMoLPostStep
-  {
-    LANG: Fortran
-  } "Possibly reset evolved fluxes to zero if GRhydro performs atmosphere reset!"
-
-  # Reset evolved fluxes to atmosphere after Con2Prim if rho was reset to atmosphere! 
-  SCHEDULE Refluxing_ResetToAtmosphere IN MoL_PostStep AFTER HydroBase_PostStep IF GRHydro::execute_MoL_PostStep
-  {
-    LANG: Fortran
-  } "Possibly reset evolved fluxes to zero after Con2Prim if GRhydro performs atmosphere reset in Con2Prim!"
-}
-
-
 
 # Schedule refluxing before MoL_PostStep, because MoL_PostStep calls
 # con2prim, which has to happen after refluxing
 # TODO: Schedule all boundary conditions etc. after this routine
-
 if (refluxing_debug_variables) {
-  
   SCHEDULE Refluxing_CorrectState AT postrestrict BEFORE MoL_PostStep
   {
     LANG: C
     OPTIONS: level
     STORAGE: correction
-    
+
     SYNC: restrict_weight_fine
     SYNC: restrict_weight_coarse
     SYNC: flux_weight_fine
@@ -138,14 +74,11 @@ if (refluxing_debug_variables) {
     SYNC: correction
     SYNC: correction_total
   } "Correct coarse grid state"
-  
 } else {
-  
   SCHEDULE Refluxing_CorrectState AT postrestrict BEFORE MoL_PostStep
   {
     LANG: C
     OPTIONS: level
     STORAGE: correction
   } "Correct coarse grid state"
-  
 }

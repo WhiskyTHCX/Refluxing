@@ -25,7 +25,7 @@ ActiveThorns = "Constants TmunuBase HydroBase "
 ActiveThorns = "EOS_Omni"
 ActiveThorns = "GRHydro GRHydro_InitData"
 ActiveThorns = "HDF5"
-ActiveThorns = "Refluxing"
+ActiveThorns = "GRHydro_Refluxing Refluxing"
 
 #------------------------------------------------------------------------------
 # Utility parameters:
@@ -33,14 +33,14 @@ ActiveThorns = "Refluxing"
 
 NaNChecker::check_every   =  1
 NaNChecker::check_vars = "
-            ADMBase::curv 
-            ADMBase::metric 
-            ADMBase::lapse 
-            ADMBase::shift 
+            ADMBase::curv
+            ADMBase::metric
+            ADMBase::lapse
+            ADMBase::shift
             HydroBase::Bvec
-            HydroBase::rho 
-            HydroBase::eps 
-            HydroBase::press 
+            HydroBase::rho
+            HydroBase::eps
+            HydroBase::press
             HydroBase::vel
             HydroBase::w_lorentz
 "
@@ -162,16 +162,15 @@ GRHydro::GRHydro_eos_table         = "Ideal_Fluid"
 GRHydro::Grhydro_MaxNumConstrainedVars = 13
 grhydro::grhydro_maxnumsandrvars       = 16
 GRHydro::GRHydro_MaxNumEvolvedVars     = 9
-refluxing::nvars                       = 8
-refluxing::suppress_refluxing = no
-refluxing::verbose = no
+GRHydro_Refluxing::nvars               = 8
+refluxing::verbose                     = no
 
 
 GRHydro::clean_divergence          = "yes"
 GRHydro::psidcspeed                = "light speed"
 GRHydro::kap_dc                    = 10.0
 GRHydro::track_divB                = "yes"
-GRHydro::calculate_bcom            = "yes" 
+GRHydro::calculate_bcom            = "yes"
 
 #------------------------------------------------------------------------------
 # Output:

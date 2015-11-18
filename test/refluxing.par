@@ -31,6 +31,7 @@ ActiveThorns     =      "EOS_Omni
 # Hydro
 ActiveThorns     =      "grhydro
                          grhydro_initdata
+                         grhydro_refluxing
                          refluxing
                         "
 

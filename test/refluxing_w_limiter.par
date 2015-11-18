@@ -33,6 +33,7 @@ ActiveThorns     =      "EOS_Omni
 # Hydro
 ActiveThorns     =      "grhydro
                          grhydro_initdata
+                         grhydro_refluxing
                          refluxing
                         "
 
@@ -75,8 +76,8 @@ IOASCII::out1D_vars             =       "grid::coordinates
                                          grhydro::tau"
 
 IO::out_dir                                  = $parfile
-IO::out_fileinfo                             = "none"                                                                                                                                 
-IO::parfile_write                            = "no"                                                                                                                                   
+IO::out_fileinfo                             = "none"
+IO::parfile_write                            = "no"
 io::recover                                  = no
 carpet::enable_all_storage                   = no
 

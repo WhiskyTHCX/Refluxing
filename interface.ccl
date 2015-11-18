@@ -2,8 +2,6 @@
 
 IMPLEMENTS: Refluxing
 
-INHERITS: GRHydro
-
 USES INCLUDE HEADER: loopcontrol.h
 
 USES INCLUDE HEADER: defs.hh
@@ -14,7 +12,15 @@ USES INCLUDE HEADER: vect.hh
 
 USES INCLUDE HEADER: carpet.hh
 
-
+# Register variables to be refluxed, returns
+CCTK_INT FUNCTION                     \
+    RefluxingRegisterVariable         \
+        (CCTK_INT IN VariableIndex,   \
+         CCTK_INT IN UseSlowSector,   \
+         CCTK_INT OUT FluxIndex)
+PROVIDES FUNCTION RefluxingRegisterVariable \
+    WITH Refluxing_RegisterVariable         \
+    LANGUAGE C
 
 # Register evolved variables
 CCTK_INT FUNCTION                  \
@@ -76,7 +82,7 @@ CCTK_INT FUNCTION GetBoundarySizesAndTypes \
    CCTK_INT OUT ARRAY is_physbnd)
 REQUIRES FUNCTION GetBoundarySizesAndTypes
 
-
+PRIVATE:
 
 # Flux weight functions (shows where refluxing happens; for debugging only)
 CCTK_REAL restrict_weight_fine TYPE=gf TAGS='Prolongation="none" Checkpoint="no" tensortypealias="D" tensorweight=+1.0' "Fine grid restriction weight"
@@ -99,7 +105,7 @@ CCTK_REAL flux_weight_coarse[3] TYPE=gf TAGS='Prolongation="none" Checkpoint="no
 # All these variables exist for all conserved quantites
 
 # There are:
-#   (nvars) conserved quantities
+#   (refluxing_nvars) conserved quantities
 #   3 directions
 #   fluxes, coarse and fine registers with 2 time levels each
 #      make altogether for 5 * 3 * (1 + 2 + 2) = 75 additional time levels
@@ -107,34 +113,16 @@ CCTK_REAL flux_weight_coarse[3] TYPE=gf TAGS='Prolongation="none" Checkpoint="no
 #      this could be optimised since these need only be stored
 #      on the refinement boundaries, not in the whole volume
 
-CCTK_REAL flux[3*nvars] TYPE=gf TAGS='Prolongation="none" Checkpoint="no" tensortypealias="D" tensorweight=+1.0' "Captured fluxes"
+PUBLIC:
 
-CCTK_REAL register_fine[3*nvars] TYPE=gf TIMELEVELS=2 TAGS='Prolongation="none" tensortypealias="D" tensorweight=+1.0' "Registers for fine grid fluxes"
+CCTK_REAL flux[3*refluxing_nvars] TYPE=gf TAGS='Prolongation="none" Checkpoint="no" tensortypealias="D" tensorweight=+1.0' "Captured fluxes"
 
-CCTK_REAL register_coarse[3*nvars] TYPE=gf TIMELEVELS=2 TAGS='Prolongation="none" tensortypealias="D" tensorweight=+1.0' "Registers for coarse grid fluxes"
+PRIVATE:
 
-CCTK_REAL correction[3*nvars] TYPE=gf TAGS='Prolongation="restrict" Checkpoint="no" tensortypealias="D" tensorweight=+1.0' "Corrections"
+CCTK_REAL register_fine[3*refluxing_nvars] TYPE=gf TIMELEVELS=2 TAGS='Prolongation="none" tensortypealias="D" tensorweight=+1.0' "Registers for fine grid fluxes"
 
-CCTK_REAL delayed_correction[3*nvars] TYPE=gf TAGS='Prolongation="none" tensortypealias="D" tensorweight=+1.0' "Delayed corrections"
+CCTK_REAL register_coarse[3*refluxing_nvars] TYPE=gf TIMELEVELS=2 TAGS='Prolongation="none" tensortypealias="D" tensorweight=+1.0' "Registers for coarse grid fluxes"
 
-CCTK_REAL correction_total[3*nvars] TYPE=gf TAGS='Prolongation="none" tensortypealias="D" tensorweight=+1.0' "Accumulated corrections (for statistics only)"
+CCTK_REAL correction[3*refluxing_nvars] TYPE=gf TAGS='Prolongation="restrict" Checkpoint="no" tensortypealias="D" tensorweight=+1.0' "Corrections"
 
-
-
-CCTK_INT grhydro_indices TYPE=scalar
-{
-  index_dens
-  index_sx index_sy index_sz
-  index_tau
-  index_ye
-  index_Bconsx index_Bconsy index_Bconsz
-} "Indices for GRHydro variables; use e.g. as flux[3*index_dens+1] for y-flux for denxity"
-
-
-
-# Atmosphere mask
-
-CCTK_REAL reflux_atmosphere_mask TYPE=gf TAGS='Prolongation="none" tensortypealias="Scalar"' "Copy of the atmosphere mask that can be restricted"
-
-CCTK_REAL restricted_atmosphere_mask TYPE=gf TAGS='Prolongation="restrict" tensortypealias="Scalar"' "Copy of the atmosphere mask that can be restricted"
-# We expect 0 for a normal point, 1 for atmosphere
+CCTK_REAL correction_total[3*refluxing_nvars] TYPE=gf TAGS='Prolongation="none" tensortypealias="D" tensorweight=+1.0' "Accumulated corrections (for statistics only)"

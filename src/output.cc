@@ -39,11 +39,11 @@ void Refluxing_Output(CCTK_ARGUMENTS)
 {
   DECLARE_CCTK_ARGUMENTS;
   DECLARE_CCTK_PARAMETERS;
-  
+
   assert(is_level_mode());
-  
+
   CCTK_INFO("Outputting refluxing debug variables");
-  
+
   args_t args;
   args.cctkGH = cctkGH;
   CCTK_TraverseString(debug_variables, output, &args, CCTK_GROUP_OR_VAR);
